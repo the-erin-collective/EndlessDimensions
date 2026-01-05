@@ -1,0 +1,11 @@
+{
+  "modId": "endlessdimensions",
+  "modName": "Endless Dimensions",
+  "version": "1.0.0",
+  "description": "Replicates 20w14infinite snapshot mechanics with unlimited block possibilities",
+  "author": "EndlessDimensions",
+  "minecraftVersion": "1.20.1",
+  "entryPoint": "dist/index.js",
+  "dependencies": [],
+  "mixins": []
+}
