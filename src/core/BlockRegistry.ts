@@ -70,8 +70,26 @@ export class BlockRegistry {
         // Get all blocks from Minecraft's registry
         this.allBlocks = this.minecraft.registry.getBlocks();
         
-        // Filter out blacklisted blocks
-        this.safeBlocks = this.allBlocks.filter(block => !this.blacklistedBlocks.has(block));
+        // Filter out blacklisted blocks and technical blocks
+        this.safeBlocks = this.allBlocks.filter(block => {
+            // Skip blacklisted blocks
+            if (this.blacklistedBlocks.has(block)) {
+                return false;
+            }
+            
+            // Skip technical blocks that don't have corresponding items
+            try {
+                const block = this.minecraft.registry.getBlock(block);
+                if (!block || !block.asItem || block.asItem().toString() === 'minecraft:air') {
+                    return false;
+                }
+            } catch (error) {
+                // If we can't get the block or its item, skip it
+                return false;
+            }
+            
+            return true;
+        });
         
         this.logger.info(`Loaded ${this.allBlocks.length} total blocks`);
         this.logger.info(`Filtered to ${this.safeBlocks.length} safe blocks for dimension generation`);
