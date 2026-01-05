@@ -84,6 +84,14 @@ class Builder {
                 path.join(this.buildDir, 'LICENSE')
             );
         }
+        
+        // Copy custom block resources
+        if (fs.existsSync(path.join(__dirname, 'src', 'resources'))) {
+            this.copyDirectory(
+                path.join(__dirname, 'src', 'resources'),
+                path.join(this.buildDir, 'resources')
+            );
+        }
     }
 
     async generateMetadata() {

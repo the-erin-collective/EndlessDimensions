@@ -1,4 +1,4 @@
-import { Minecraft } from 'moud';
+/// <reference types="@epi-studio/moud-sdk" />
 import { HashEngine, EasterEggDimension } from './HashEngine';
 import { BlockRegistry } from './BlockRegistry';
 
@@ -16,13 +16,13 @@ export interface DimensionConfig {
 }
 
 export class DimensionGenerator {
-    private minecraft: Minecraft;
+    private api: any;
     private hashEngine: HashEngine;
     private blockRegistry: BlockRegistry;
     private generatedDimensions: Map<string, DimensionConfig>;
 
-    constructor(minecraft: Minecraft, hashEngine: HashEngine, blockRegistry: BlockRegistry) {
-        this.minecraft = minecraft;
+    constructor(api: any, hashEngine: HashEngine, blockRegistry: BlockRegistry) {
+        this.api = api;
         this.hashEngine = hashEngine;
         this.blockRegistry = blockRegistry;
         this.generatedDimensions = new Map();

@@ -1,4 +1,4 @@
-import { Minecraft, events, Entity, Player, ItemStack, ItemEntity } from 'moud';
+/// <reference types="@epi-studio/moud-sdk" />
 import { DimensionGenerator } from '../core/DimensionGenerator';
 import { HashEngine } from '../core/HashEngine';
 
@@ -8,8 +8,8 @@ export class PortalHandler {
     private hashEngine: HashEngine;
     private isRegistered: boolean = false;
 
-    constructor(minecraft: Minecraft, dimensionGenerator: DimensionGenerator, hashEngine: HashEngine) {
-        this.minecraft = minecraft;
+    constructor(api: any, dimensionGenerator: DimensionGenerator, hashEngine: HashEngine) {
+        this.minecraft = api;
         this.dimensionGenerator = dimensionGenerator;
         this.hashEngine = hashEngine;
     }

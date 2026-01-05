@@ -3,25 +3,19 @@
   "version": "1.0.0",
   "description": "A Minecraft mod that replicates 20w14infinite snapshot mechanics using Moud",
   "main": "dist/index.js",
+  "moud:main": "src/main.ts",
   "scripts": {
-    "build": "tsc && node build.js",
-    "build:ts": "tsc",
-    "build:pack": "node build.js",
-    "dev": "tsc --watch",
-    "clean": "rimraf dist build",
-    "lint": "tsc --noEmit",
-    "test": "npm run lint",
-    "prepare": "npm run build"
+    "dev": "moud dev --watch",
+    "build": "moud pack"
   },
   "keywords": ["minecraft", "mod", "moud", "typescript", "20w14infinite"],
   "author": "EndlessDimensions",
-  "license": "MIT",
+  "license": "AGPL-3.0-only",
   "devDependencies": {
     "@types/node": "^20.0.0",
     "rimraf": "^5.0.0",
-    "typescript": "^5.0.0"
-  },
-  "dependencies": {
-    "moud": "^1.0.0"
+    "typescript": "^5.0.0",
+    "@epi-studio/moud-sdk": "^0.7.3",
+    "@epi-studio/moud-cli": "^0.3.11"
   }
 }

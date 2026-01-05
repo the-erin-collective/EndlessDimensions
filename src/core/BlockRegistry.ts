@@ -1,4 +1,4 @@
-import { Minecraft } from 'moud';
+/// <reference types="@epi-studio/moud-sdk" />
 import { Logger } from '../utils/Logger';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -10,10 +10,12 @@ export class BlockRegistry {
     private safeBlocks: string[];
     private logger: Logger;
 
-    constructor(minecraft: Minecraft) {
-        this.minecraft = minecraft;
-        this.logger = new Logger('BlockRegistry');
+    constructor(api: any) {
+        this.minecraft = api;
+        this.logger = { info: console.log, error: console.error, warn: console.warn };
+        this.allBlocks = [];
         this.blacklistedBlocks = new Set();
+        this.safeBlocks = [];
         this.initializeBlacklist();
         this.loadBlockRegistry();
     }
