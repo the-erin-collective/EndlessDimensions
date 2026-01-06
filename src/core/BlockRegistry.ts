@@ -2,22 +2,30 @@
 import { Logger } from '../utils/Logger';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as https from 'https';
 
 export class BlockRegistry {
-    private minecraft: Minecraft;
+    private api: MoudAPI;
     private allBlocks: string[];
     private blacklistedBlocks: Set<string>;
     private safeBlocks: string[];
     private logger: Logger;
 
-    constructor(api: any) {
-        this.minecraft = api;
-        this.logger = { info: console.log, error: console.error, warn: console.warn };
+    constructor(api: MoudAPI) {
+        this.api = api;
+        this.logger = new Logger('BlockRegistry');
         this.allBlocks = [];
         this.blacklistedBlocks = new Set();
         this.safeBlocks = [];
         this.initializeBlacklist();
-        this.loadBlockRegistry();
+        // Note: loadBlockRegistry is now async and should be called after construction
+    }
+
+    /**
+     * Initialize the block registry (must be called after construction)
+     */
+    public async initialize(): Promise<void> {
+        await this.loadBlockRegistry();
     }
 
     /**
@@ -33,7 +41,8 @@ export class BlockRegistry {
             
             // Load all blocks from all categories
             for (const category of Object.values(blacklistData.categories)) {
-                for (const block of category.blocks) {
+                const categoryData = category as { blocks: string[] };
+                for (const block of categoryData.blocks) {
                     this.blacklistedBlocks.add(block);
                 }
             }
@@ -66,31 +75,21 @@ export class BlockRegistry {
     }
 
     /**
-     * Load all blocks from Minecraft's built-in registry
+     * Load all blocks dynamically from external API
      */
-    private loadBlockRegistry(): void {
-        // Get all blocks from Minecraft's registry
-        this.allBlocks = this.minecraft.registry.getBlocks();
+    private async loadBlockRegistry(): Promise<void> {
+        try {
+            // Fetch blocks dynamically from official Minecraft API
+            this.allBlocks = await this.fetchBlocksFromAPI();
+            this.logger.info(`Successfully fetched ${this.allBlocks.length} blocks from external API`);
+        } catch (error) {
+            this.logger.error('Failed to fetch blocks from API', error);
+            throw new Error(`Unable to load block registry: ${error}. The server requires internet access to fetch the latest Minecraft blocks.`);
+        }
         
-        // Filter out blacklisted blocks and technical blocks
+        // Filter out blacklisted blocks - this is the original approach you preferred
         this.safeBlocks = this.allBlocks.filter(block => {
-            // Skip blacklisted blocks
-            if (this.blacklistedBlocks.has(block)) {
-                return false;
-            }
-            
-            // Skip technical blocks that don't have corresponding items
-            try {
-                const block = this.minecraft.registry.getBlock(block);
-                if (!block || !block.asItem || block.asItem().toString() === 'minecraft:air') {
-                    return false;
-                }
-            } catch (error) {
-                // If we can't get the block or its item, skip it
-                return false;
-            }
-            
-            return true;
+            return !this.blacklistedBlocks.has(block);
         });
         
         this.logger.info(`Loaded ${this.allBlocks.length} total blocks`);
@@ -100,6 +99,40 @@ export class BlockRegistry {
         if (this.safeBlocks.length === 0) {
             throw new Error('No safe blocks available after filtering. Check block blacklist configuration.');
         }
+    }
+
+    /**
+     * Fetch block list from external Minecraft API
+     */
+    private async fetchBlocksFromAPI(): Promise<string[]> {
+        return new Promise((resolve, reject) => {
+            const url = 'http://minecraft-ids.grahamedgecombe.com/items.json';
+            
+            https.get(url, (response) => {
+                let data = '';
+                
+                response.on('data', (chunk) => {
+                    data += chunk;
+                });
+                
+                response.on('end', () => {
+                    try {
+                        const items = JSON.parse(data);
+                        // Filter only blocks (type < 256 typically indicates blocks)
+                        const blocks = items
+                            .filter((item: any) => item.type < 256)
+                            .map((item: any) => `minecraft:${item.text_type}`)
+                            .filter((block: string, index: number, self: string[]) => self.indexOf(block) === index); // Remove duplicates
+                        
+                        resolve(blocks);
+                    } catch (error) {
+                        reject(new Error(`Failed to parse API response: ${error}`));
+                    }
+                });
+            }).on('error', (error) => {
+                reject(new Error(`Failed to fetch from API: ${error}`));
+            });
+        });
     }
 
     /**
