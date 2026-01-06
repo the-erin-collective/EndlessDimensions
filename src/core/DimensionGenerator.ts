@@ -16,12 +16,12 @@ export interface DimensionConfig {
 }
 
 export class DimensionGenerator {
-    private api: any;
+    private api: MoudAPI;
     private hashEngine: HashEngine;
     private blockRegistry: BlockRegistry;
     private generatedDimensions: Map<string, DimensionConfig>;
 
-    constructor(api: any, hashEngine: HashEngine, blockRegistry: BlockRegistry) {
+    constructor(api: MoudAPI, hashEngine: HashEngine, blockRegistry: BlockRegistry) {
         this.api = api;
         this.hashEngine = hashEngine;
         this.blockRegistry = blockRegistry;
@@ -58,12 +58,12 @@ export class DimensionGenerator {
         const config: DimensionConfig = {
             id: dimensionId,
             name: easterEgg.displayName,
-            generatorType: easterEgg.generatorType as any,
+            generatorType: easterEgg.generatorType as 'noise' | 'flat' | 'void' | 'floating_islands' | 'the_end' | 'custom',
             defaultBlock: easterEgg.defaultBlock,
             defaultFluid: this.selectFluid(seed + 1),
-            seaLevel: this.calculateSeaLevel(seed + 2, easterEgg.generatorType),
-            minY: this.calculateMinY(seed + 3, easterEgg.generatorType),
-            height: this.calculateHeight(seed + 4, easterEgg.generatorType),
+            seaLevel: this.calculateSeaLevel(seed + 2, easterEgg.generatorType as 'flat' | 'custom' | 'void' | 'noise' | 'the_end' | 'floating_islands'),
+            minY: this.calculateMinY(seed + 3, easterEgg.generatorType as 'flat' | 'custom' | 'void' | 'noise' | 'the_end' | 'floating_islands'),
+            height: this.calculateHeight(seed + 4, easterEgg.generatorType as 'flat' | 'custom' | 'void' | 'noise' | 'the_end' | 'floating_islands'),
             additionalBlocks: this.generateAdditionalBlocks(seedBigInt + 5n, 8),
             specialFeatures: easterEgg.specialFeatures
         };
@@ -293,8 +293,13 @@ export class DimensionGenerator {
             // Create the dimension JSON configuration
             const dimensionJson = this.createDimensionJson(config);
             
-            // Register the dimension with Minecraft
-            this.minecraft.dimensions.register(config.id, dimensionJson);
+            // Note: Dimension registration is not available in Moud SDK
+            // This is a placeholder for future implementation
+            console.log(`Dimension registration not yet supported: ${config.id}`);
+            // TODO: Implement when Moud SDK adds dimension support
+            /*
+            this.api.dimensions.register(config.id, dimensionJson);
+            */
             
             console.log(`Registered dimension: ${config.name} (${config.id})`);
             console.log(`  Generator: ${config.generatorType}`);

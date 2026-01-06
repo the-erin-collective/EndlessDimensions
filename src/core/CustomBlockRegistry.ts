@@ -2,14 +2,14 @@
 import { Logger } from '../utils/Logger';
 
 export class CustomBlockRegistry {
-    private minecraft: Minecraft;
+    private api: MoudAPI;
     private logger: Logger;
     private customBlocks: Map<string, CustomBlockDefinition>;
 
-    constructor(api: any) {
+    constructor(api: MoudAPI) {
         console.log('CustomBlockRegistry constructor starting...');
-        this.minecraft = api;
-        this.logger = { info: console.log, error: console.error, warn: console.warn };
+        this.api = api;
+        this.logger = new Logger('CustomBlockRegistry');
         this.customBlocks = new Map();
         console.log('CustomBlockRegistry constructor completed');
     }
@@ -289,8 +289,12 @@ export class CustomBlockRegistry {
      * Register a single block with Minecraft
      */
     private registerBlock(blockId: string, definition: CustomBlockDefinition): void {
-        // Register the block with Moud/Minecraft
-        this.minecraft.blocks.register({
+        // Note: Custom block registration is not available in Moud SDK
+        // This is a placeholder for future implementation
+        this.logger.info(`Custom block registration not yet supported: ${blockId}`);
+        // TODO: Implement when Moud SDK adds custom block support
+        /*
+        this.api.blocks.register({
             id: blockId,
             name: definition.name,
             material: definition.material,
@@ -302,6 +306,7 @@ export class CustomBlockRegistry {
             texture: definition.texture,
             properties: definition.properties
         });
+        */
     }
 
     /**
