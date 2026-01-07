@@ -660,9 +660,39 @@ export class InventoryManager {
   }
 
   /**
-   * Get book NBT for player
+   * Get book NBT for player (now using PacketInterceptor)
    */
   public getBookNBT(playerId: string, slot?: number): BookData | null {
+    try {
+      // Use the new BookDataBridge for packet-based book reading
+      const { getBookDataBridge } = require('./BookDataBridge');
+      const bridge = getBookDataBridge();
+      
+      if (!bridge) {
+        this.logger.warn('BookDataBridge not available, falling back to legacy method');
+        return this.getBookNBTLegacy(playerId, slot);
+      }
+
+      const bookData = bridge.getBookNBT(playerId, slot);
+      
+      if (bookData) {
+        this.logger.debug(`Successfully retrieved book data via packet interception: "${bookData.title}"`);
+        return bookData;
+      } else {
+        this.logger.debug('No book data found via packet interception, trying legacy method');
+        return this.getBookNBTLegacy(playerId, slot);
+      }
+
+    } catch (error) {
+      this.logger.error(`Failed to get book NBT for player ${playerId}:`, error);
+      return this.getBookNBTLegacy(playerId, slot);
+    }
+  }
+
+  /**
+   * Legacy book NBT method (fallback)
+   */
+  private getBookNBTLegacy(playerId: string, slot?: number): BookData | null {
     try {
       const inventory = this.playerInventories.get(playerId);
       if (!inventory) return null;
@@ -687,16 +717,29 @@ export class InventoryManager {
 
       return item && item.id === 'minecraft:written_book' ? this.extractBookNBT(item) : null;
     } catch (error) {
-      this.logger.error(`Failed to get book NBT for player ${playerId}:`, error);
+      this.logger.error(`Failed to get book NBT (legacy) for player ${playerId}:`, error);
       return null;
     }
   }
 
   /**
-   * Extract dimension data from book NBT
+   * Extract dimension data from book NBT (now using BookDataBridge)
    */
   public extractDimensionData(bookNBT: BookData): any {
     try {
+      // Use the new BookDataBridge for dimension data extraction
+      const { getBookDataBridge } = require('./BookDataBridge');
+      const bridge = getBookDataBridge();
+      
+      if (bridge) {
+        const dimensionData = bridge.extractDimensionData(bookNBT);
+        if (dimensionData) {
+          this.logger.debug(`Successfully extracted dimension data: "${dimensionData.title}"`);
+          return dimensionData;
+        }
+      }
+
+      // Fallback to legacy method
       return {
         title: bookNBT.title,
         author: bookNBT.author,
