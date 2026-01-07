@@ -280,40 +280,10 @@ export class DimensionGenerator {
                 selectedFeatures.push(feature);
             }
         }
-
-        return selectedFeatures;
     }
 
-    /**
-     * Register the dimension with Minecraft
-     * @param config The dimension configuration
-     */
-    public registerDimension(config: DimensionConfig): void {
-        try {
-            // Create the dimension JSON configuration
-            const dimensionJson = this.createDimensionJson(config);
-            
-            // Note: Dimension registration is not available in Moud SDK
-            // This is a placeholder for future implementation
-            console.log(`Dimension registration not yet supported: ${config.id}`);
-            // TODO: Implement when Moud SDK adds dimension support
-            /*
-            this.api.dimensions.register(config.id, dimensionJson);
-            */
-            
-            console.log(`Registered dimension: ${config.name} (${config.id})`);
-            console.log(`  Generator: ${config.generatorType}`);
-            console.log(`  Default Block: ${config.defaultBlock}`);
-            console.log(`  Default Fluid: ${config.defaultFluid}`);
-            console.log(`  Sea Level: ${config.seaLevel}`);
-            console.log(`  Height: ${config.height}`);
-            console.log(`  Additional Blocks: ${config.additionalBlocks.join(', ')}`);
-            console.log(`  Special Features: ${config.specialFeatures.join(', ')}`);
-            
-        } catch (error) {
-            console.error(`Failed to register dimension ${config.id}:`, error);
-            throw error;
-        }
+    return selectedFeatures;
+}
     }
 
     /**
