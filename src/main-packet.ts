@@ -4,6 +4,12 @@ import { HashEngine } from './core/HashEngine';
 import { BlockRegistry } from './core/BlockRegistry';
 import { PortalHandler } from './events/PortalHandler';
 import { CustomBlockRegistry } from './core/CustomBlockRegistry';
+import { getCustomBlockRegistry } from './enhanced/CustomBlockRegistry';
+import { getBiomeGenerator } from './worldgen/BiomeGenerator';
+import { getStructureGenerator } from './worldgen/StructureGenerator';
+import { getWorldFeatureIntegration } from './worldgen/WorldFeatureIntegration';
+import { getSoundSystem } from './enhanced/SoundSystem';
+import { getParticleSystem } from './enhanced/ParticleSystem';
 import { getBookDataBridge } from './core/BookDataBridge';
 
 console.log('Endless Dimensions Mod (Packet Interception) starting...');
@@ -14,6 +20,12 @@ let hashEngine: HashEngine;
 let blockRegistry: BlockRegistry;
 let portalHandler: PortalHandler;
 let customBlockRegistry: CustomBlockRegistry;
+let enhancedCustomBlockRegistry: any;
+let biomeGenerator: any;
+let structureGenerator: any;
+let worldFeatureIntegration: any;
+let soundSystem: any;
+let particleSystem: any;
 let bookDataBridge: any;
 
 // Initialize when the server loads
@@ -27,7 +39,17 @@ api.on('server.load', async () => {
         await bookDataBridge.initialize();
         console.log('BookDataBridge initialized successfully');
         
-        // Step 2: Register custom blocks
+        // Step 2: Initialize Enhanced Systems
+        console.log('Initializing Enhanced Systems...');
+        enhancedCustomBlockRegistry = getCustomBlockRegistry();
+        biomeGenerator = getBiomeGenerator();
+        structureGenerator = getStructureGenerator();
+        worldFeatureIntegration = getWorldFeatureIntegration();
+        soundSystem = getSoundSystem();
+        particleSystem = getParticleSystem();
+        console.log('Enhanced Systems initialized');
+        
+        // Step 3: Register custom blocks (legacy system)
         console.log('Creating CustomBlockRegistry...');
         customBlockRegistry = new CustomBlockRegistry(api);
         console.log('CustomBlockRegistry created:', customBlockRegistry);
@@ -36,17 +58,26 @@ api.on('server.load', async () => {
         customBlockRegistry.registerCustomBlocks();
         console.log('registerCustomBlocks completed');
         
-        // Step 3: Initialize core systems
+        // Step 4: Initialize core systems
         hashEngine = new HashEngine();
         blockRegistry = new BlockRegistry(api);
         dimensionGenerator = new DimensionGenerator(api, hashEngine, blockRegistry);
         portalHandler = new PortalHandler(api, dimensionGenerator, hashEngine);
         
-        // Step 4: Register event handlers
+        // Step 5: Register event handlers
         portalHandler.registerEvents();
         
-        // Step 5: Set up book-based dimension generation events
+        // Step 6: Set up book-based dimension generation events
         setupBookDimensionEvents();
+        
+        // Step 7: Log initialization statistics
+        console.log('Enhanced Systems Statistics:');
+        console.log('  Custom Block Registry:', enhancedCustomBlockRegistry.getStatistics());
+        console.log('  Biome Generator:', biomeGenerator.getStatistics());
+        console.log('  Structure Generator:', structureGenerator.getStatistics());
+        console.log('  World Feature Integration:', worldFeatureIntegration.getStatistics());
+        console.log('  Sound System:', soundSystem.getStatistics());
+        console.log('  Particle System:', particleSystem.getStatistics());
         
         console.log('Endless Dimensions Mod (Packet Interception) initialized successfully!');
         console.log('Packet Interception Statistics:', bookDataBridge.getStatistics());
@@ -110,12 +141,36 @@ function generateDimensionFromBook(playerId: string, bookData: any, dimensionDat
         // Generate dimension configuration
         const dimensionConfig = dimensionGenerator.generateDimension(bookText);
         
+        // Generate enhanced features for dimension
+        console.log('Generating enhanced features for dimension...');
+        const seed = dimensionGenerator.hashEngine.getDimensionSeed(bookText);
+        
+        // Generate custom blocks
+        const customBlockProfile = enhancedCustomBlockRegistry.generateDimensionBlocks(dimensionConfig, seed);
+        
+        // Generate biomes
+        const biomeIds = biomeGenerator.generateBiomes(dimensionConfig, seed);
+        
+        // Generate structures
+        const structureIds = structureGenerator.generateStructures(dimensionConfig, seed + 1000, biomeIds);
+        
+        // Integrate world features
+        const worldConfig = await worldFeatureIntegration.integrateWorldFeatures(dimensionConfig, seed + 2000);
+        
+        // Generate sound profile
+        const soundProfile = soundSystem.generateDimensionSounds(dimensionConfig, seed + 3000);
+        
+        // Generate particle profile
+        const particleProfile = particleSystem.generateDimensionParticles(dimensionConfig, seed + 4000);
+        
+        console.log('Enhanced features generated successfully');
+        
         // Register the dimension
-        dimensionGenerator.registerDimension(dimensionConfig);
+        await dimensionGenerator.registerDimension(dimensionConfig);
         
         // Notify player
         if (api.server && api.server.executeCommand) {
-            const message = `§6Dimension Created: §e${dimensionConfig.name}§6!§r\n§7Based on book "${bookData.title}" by ${bookData.author}`;
+            const message = `§6Dimension Created: §e${dimensionConfig.name}§6!§r\n§7Based on book "${bookData.title}" by ${bookData.author}\n§7Features: ${biomeIds.length} biomes, ${structureIds.length} structures, ${customBlockProfile.customBlocks.length} custom blocks`;
             api.server.executeCommand(`/tell ${playerId} ${message}`);
         }
         
@@ -142,6 +197,31 @@ api.on('server.shutdown', () => {
     
     if (bookDataBridge) {
         bookDataBridge.shutdown();
+    }
+    
+    // Clean up enhanced systems
+    if (enhancedCustomBlockRegistry) {
+        enhancedCustomBlockRegistry.clearCustomBlocks();
+    }
+    
+    if (biomeGenerator) {
+        biomeGenerator.clearBiomes();
+    }
+    
+    if (structureGenerator) {
+        structureGenerator.clearStructures();
+    }
+    
+    if (worldFeatureIntegration) {
+        worldFeatureIntegration.clearWorldFeatures();
+    }
+    
+    if (soundSystem) {
+        soundSystem.clearSounds();
+    }
+    
+    if (particleSystem) {
+        particleSystem.clearParticles();
     }
     
     console.log('Endless Dimensions Mod (Packet Interception) shutdown complete');
