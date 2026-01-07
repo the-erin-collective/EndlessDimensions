@@ -53,6 +53,7 @@ interface SyncStatistics {
  */
 export class CentralizedStateManager {
   private logger: Logger;
+  private api: MoudAPI;
   private stateSubscribers: Map<string, Set<StateSubscriber>> = new Map();
   private stateCache: Map<string, any> = new Map();
   private playerSyncStates: Map<string, PlayerSyncState> = new Map();
@@ -64,7 +65,8 @@ export class CentralizedStateManager {
   private maxQueueSize: number = 1000;
   private syncTimeout: number = 5000; // 5 second timeout
 
-  constructor() {
+  constructor(api: MoudAPI) {
+    this.api = api;
     this.logger = new Logger('CentralizedStateManager');
     this.statistics = {
       totalChanges: 0,
@@ -109,13 +111,16 @@ export class CentralizedStateManager {
    */
   private subscribeToGlobalState(): void {
     try {
-      if (api.state) {
+      // Check if API has state management capabilities
+      if ((this.api as any).state) {
         // Subscribe to all state changes
-        api.state.subscribe("*", (newState) => {
+        (this.api as any).state.subscribe("*", (newState: any) => {
           this.handleGlobalStateChange(newState);
         });
 
         this.logger.debug('Subscribed to global state changes');
+      } else {
+        this.logger.warn('API state management not available - state synchronization disabled');
       }
     } catch (error) {
       this.logger.error('Failed to subscribe to global state:', error);
@@ -127,15 +132,19 @@ export class CentralizedStateManager {
    */
   private initializePlayerTracking(): void {
     try {
-      // Track player join/leave events
-      if (api.events) {
-        api.events.on('playerJoin', (player) => {
+      // Track player join/leave events if available
+      if ((this.api as any).events) {
+        (this.api as any).events.on('playerJoin', (player: any) => {
           this.handlePlayerJoin(player);
         });
 
-        api.events.on('playerLeave', (player) => {
+        (this.api as any).events.on('playerLeave', (player: any) => {
           this.handlePlayerLeave(player);
         });
+        
+        this.logger.debug('Player event tracking initialized');
+      } else {
+        this.logger.warn('API events not available - player tracking disabled');
       }
 
       // Initialize existing players
@@ -152,12 +161,16 @@ export class CentralizedStateManager {
    */
   private async initializeExistingPlayers(): Promise<void> {
     try {
-      if (api.server && api.server.getPlayers) {
-        const players = api.server.getPlayers();
+      if ((this.api as any).server && (this.api as any).server.getPlayers) {
+        const players = (this.api as any).server.getPlayers();
         
         for (const player of players) {
           this.handlePlayerJoin(player);
         }
+        
+        this.logger.debug(`Initialized ${players.length} existing players`);
+      } else {
+        this.logger.warn('API server methods not available - existing player initialization skipped');
       }
     } catch (error) {
       this.logger.error('Failed to initialize existing players:', error);
@@ -231,14 +244,17 @@ export class CentralizedStateManager {
    */
   private initializeStateCache(): void {
     try {
-      if (api.state) {
+      if ((this.api as any).state) {
         // Load current state into cache
-        const currentState = api.state.getAll();
+        const currentState = (this.api as any).state.getAll();
         if (currentState) {
           for (const [key, value] of Object.entries(currentState)) {
             this.stateCache.set(key, value);
           }
+          this.logger.debug(`Loaded ${this.stateCache.size} state entries into cache`);
         }
+      } else {
+        this.logger.warn('API state not available - state cache initialization skipped');
       }
 
       this.logger.debug('State cache initialized');
@@ -769,13 +785,18 @@ export class CentralizedStateManager {
 
 // Singleton instance for global access
 let globalCentralizedStateManager: CentralizedStateManager | null = null;
+let globalAPI: MoudAPI | null = null;
 
 /**
  * Get global centralized state manager instance
  */
-export function getCentralizedStateManager(): CentralizedStateManager {
+export function getCentralizedStateManager(api?: MoudAPI): CentralizedStateManager {
   if (!globalCentralizedStateManager) {
-    globalCentralizedStateManager = new CentralizedStateManager();
+    if (!api) {
+      throw new Error('API required for first initialization of CentralizedStateManager');
+    }
+    globalAPI = api;
+    globalCentralizedStateManager = new CentralizedStateManager(api);
   }
   return globalCentralizedStateManager;
 }

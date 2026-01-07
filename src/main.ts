@@ -4,6 +4,7 @@ import { HashEngine } from './core/HashEngine';
 import { BlockRegistry } from './core/BlockRegistry';
 import { PortalHandler } from './events/PortalHandler';
 import { EasterEggDimensionManager } from './core/EasterEggDimensionManager';
+import { CentralizedStateManager } from './core/CentralizedStateManager';
 import { CustomBlockRegistry } from './core/CustomBlockRegistry';
 import { getCustomBlockRegistry } from './enhanced/CustomBlockRegistry';
 import { getBiomeGenerator } from './worldgen/BiomeGenerator';
@@ -20,6 +21,7 @@ let hashEngine: HashEngine;
 let blockRegistry: BlockRegistry;
 let portalHandler: PortalHandler;
 let easterEggManager: EasterEggDimensionManager;
+let stateManager: CentralizedStateManager;
 let customBlockRegistry: CustomBlockRegistry;
 let enhancedCustomBlockRegistry: any;
 let biomeGenerator: any;
@@ -57,12 +59,16 @@ api.on('server.load', () => {
         blockRegistry = new BlockRegistry(api);
         dimensionGenerator = new DimensionGenerator(api, hashEngine, blockRegistry);
         easterEggManager = new EasterEggDimensionManager(api);
+        stateManager = new CentralizedStateManager(api);
         portalHandler = new PortalHandler(api, dimensionGenerator, hashEngine, easterEggManager);
         
-        // Step 4: Register event handlers
+        // Step 4: Initialize state manager
+        await stateManager.initialize();
+        
+        // Step 5: Register event handlers
         portalHandler.registerEvents();
         
-        // Step 5: Log initialization statistics
+        // Step 6: Log initialization statistics
         console.log('Enhanced Systems Statistics:');
         console.log('  Custom Block Registry:', enhancedCustomBlockRegistry.getStatistics());
         console.log('  Biome Generator:', biomeGenerator.getStatistics());
@@ -83,6 +89,10 @@ api.on('server.shutdown', () => {
     console.log('Endless Dimensions Mod shutting down...');
     if (portalHandler) {
         portalHandler.unregisterEvents();
+    }
+    
+    if (stateManager) {
+        stateManager.shutdown();
     }
     
     // Clean up enhanced systems

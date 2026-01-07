@@ -247,9 +247,6 @@ export class PortalHandler {
                 specialFeatures: savedDimension.specialFeatures
             };
             
-            // Register dimension
-            this.dimensionGenerator.registerDimension(dimensionConfig);
-            
             // Create visual effects
             this.createPortalEffects(portalPosition, dimensionConfig);
             
@@ -284,14 +281,11 @@ export class PortalHandler {
                 specialFeatures: savedDimension.specialFeatures
             };
             
-            // Register dimension
-            this.dimensionGenerator.registerDimension(dimensionConfig);
-            
             // Teleport player to dimension
             this.teleportPlayerToDimension(player, dimensionConfig);
             
             // Create visual effects
-            this.createPortalEffects(player.position, dimensionConfig);
+            this.createPortalEffects({ x: 0, y: 64, z: 0 }, dimensionConfig);
             
             // Send message to player
             player.sendMessage(`§6Welcome to saved dimension: §f${savedDimension.displayName}!`);

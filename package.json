@@ -6,7 +6,11 @@
   "moud:main": "src/main.ts",
   "scripts": {
     "dev": "moud dev --watch",
-    "build": "moud pack"
+    "build": "moud pack",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:integration": "npm run build && node -e \"const { IntegrationTesting } = require('./dist/testing/IntegrationTesting'); const test = new IntegrationTesting(); test.initialize().then(() => test.runAllTests()).then(reports => console.log('Test Results:', reports)).catch(err => console.error('Test Error:', err));\""
   },
   "keywords": [
     "minecraft",
@@ -21,7 +25,10 @@
     "@epi-studio/moud-cli": "^0.3.11",
     "@epi-studio/moud-sdk": "^0.7.3",
     "@types/node": "^20.19.27",
+    "@types/jest": "^29.5.0",
+    "jest": "^29.5.0",
     "rimraf": "^5.0.0",
+    "ts-jest": "^29.1.0",
     "typescript": "^5.0.0"
   }
 }
