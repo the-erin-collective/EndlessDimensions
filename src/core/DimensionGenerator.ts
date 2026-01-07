@@ -280,10 +280,8 @@ export class DimensionGenerator {
                 selectedFeatures.push(feature);
             }
         }
-    }
 
-    return selectedFeatures;
-}
+        return selectedFeatures;
     }
 
     /**

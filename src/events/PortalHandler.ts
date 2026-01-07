@@ -1,17 +1,20 @@
 /// <reference types="@epi-studio/moud-sdk" />
 import { DimensionGenerator } from '../core/DimensionGenerator';
 import { HashEngine } from '../core/HashEngine';
+import { EasterEggDimensionManager } from '../core/EasterEggDimensionManager';
 
 export class PortalHandler {
     private api: MoudAPI;
     private dimensionGenerator: DimensionGenerator;
     private hashEngine: HashEngine;
+    private easterEggManager: EasterEggDimensionManager;
     private isRegistered: boolean = false;
 
-    constructor(api: MoudAPI, dimensionGenerator: DimensionGenerator, hashEngine: HashEngine) {
+    constructor(api: MoudAPI, dimensionGenerator: DimensionGenerator, hashEngine: HashEngine, easterEggManager?: EasterEggDimensionManager) {
         this.api = api;
         this.dimensionGenerator = dimensionGenerator;
         this.hashEngine = hashEngine;
+        this.easterEggManager = easterEggManager || new EasterEggDimensionManager(api);
     }
 
     /**
@@ -107,7 +110,7 @@ export class PortalHandler {
     /**
      * Handle when a book enters a portal
      * @param bookEntity The book item entity
-     * @param portalPosition The position of the portal
+     * @param portalPosition The position of portal
      */
     private handleBookInPortal(bookEntity: any, portalPosition: any): void {
         try {
@@ -122,10 +125,40 @@ export class PortalHandler {
                 return;
             }
 
-            // Generate dimension based on book text
+            // First check if this is a saved easter egg dimension
+            const savedDimension = this.easterEggManager.checkEasterEggDimension(bookData.text.trim());
+            if (savedDimension) {
+                console.log(`Found saved easter egg dimension: ${bookData.text} -> ${savedDimension.dimensionId}`);
+                // Use saved dimension configuration
+                this.handleSavedDimension(savedDimension, portalPosition, bookData);
+                return;
+            }
+
+            // Check for built-in easter egg dimensions
+            const easterEgg = this.hashEngine.checkEasterEgg(bookData.text);
+            if (easterEgg) {
+                console.log(`Found built-in easter egg dimension: ${bookData.text}`);
+                const dimensionConfig = this.dimensionGenerator.generateDimension(bookData.text);
+                
+                // Save the easter egg dimension to folder
+                const dimensionId = this.hashEngine.getDimensionId(this.hashEngine.getDimensionSeedBigInt(bookData.text));
+                this.easterEggManager.saveEasterEggDimension(bookData.text.trim(), easterEgg, dimensionId);
+                
+                // Register dimension
+                this.dimensionGenerator.registerDimension(dimensionConfig);
+                
+                // Create visual effects
+                this.createPortalEffects(portalPosition, dimensionConfig);
+                
+                // Notify nearby players
+                this.notifyNearbyPlayers(portalPosition, dimensionConfig, bookData);
+                return;
+            }
+
+            // Generate procedural dimension
             const dimensionConfig = this.dimensionGenerator.generateDimension(bookData.text);
             
-            // Register the dimension
+            // Register dimension
             this.dimensionGenerator.registerDimension(dimensionConfig);
             
             // Create visual effects
@@ -157,19 +190,28 @@ export class PortalHandler {
                 return;
             }
 
+            // First check if this is a saved easter egg dimension
+            const savedDimension = this.easterEggManager.checkEasterEggDimension(bookText.trim());
+            if (savedDimension) {
+                console.log(`Found saved easter egg dimension: ${bookText} -> ${savedDimension.dimensionId}`);
+                // Use saved dimension configuration
+                this.handleSavedDimensionForPlayer(savedDimension, player, bookText);
+                return;
+            }
+
             // Generate dimension based on book text
             const dimensionConfig = this.dimensionGenerator.generateDimension(bookText);
             
-            // Register the dimension
+            // Register dimension
             this.dimensionGenerator.registerDimension(dimensionConfig);
             
-            // Teleport player to the new dimension
+            // Teleport player to new dimension
             this.teleportPlayerToDimension(player, dimensionConfig);
             
             // Create visual effects
             this.createPortalEffects(player.position, dimensionConfig);
             
-            // Consume the book (optional - make it configurable)
+            // Consume book (optional - make it configurable)
             if (bookStack.getAmount() > 1) {
                 bookStack.setAmount(bookStack.getAmount() - 1);
             } else {
@@ -178,6 +220,84 @@ export class PortalHandler {
             */
         } catch (error) {
             console.error('Error handling player with book in portal:', error);
+        }
+    }
+
+    /**
+     * Handle a saved easter egg dimension (for thrown books)
+     * @param savedDimension The saved dimension configuration
+     * @param portalPosition The portal position
+     * @param bookData The book data
+     */
+    private handleSavedDimension(savedDimension: any, portalPosition: any, bookData: any): void {
+        try {
+            console.log(`Using saved easter egg dimension: ${savedDimension.displayName}`);
+            
+            // Create dimension config from saved data
+            const dimensionConfig = {
+                id: savedDimension.dimensionId,
+                name: savedDimension.displayName,
+                generatorType: savedDimension.generatorType,
+                defaultBlock: savedDimension.defaultBlock,
+                defaultFluid: 'minecraft:water',
+                seaLevel: 64,
+                minY: 0,
+                height: 256,
+                additionalBlocks: [],
+                specialFeatures: savedDimension.specialFeatures
+            };
+            
+            // Register dimension
+            this.dimensionGenerator.registerDimension(dimensionConfig);
+            
+            // Create visual effects
+            this.createPortalEffects(portalPosition, dimensionConfig);
+            
+            // Notify nearby players
+            this.notifyNearbyPlayers(portalPosition, dimensionConfig, bookData);
+        } catch (error) {
+            console.error('Error handling saved dimension:', error);
+        }
+    }
+
+    /**
+     * Handle a saved easter egg dimension (for players)
+     * @param savedDimension The saved dimension configuration
+     * @param player The player
+     * @param bookText The original book text
+     */
+    private handleSavedDimensionForPlayer(savedDimension: any, player: Player, bookText: string): void {
+        try {
+            console.log(`Using saved easter egg dimension for player: ${savedDimension.displayName}`);
+            
+            // Create dimension config from saved data
+            const dimensionConfig = {
+                id: savedDimension.dimensionId,
+                name: savedDimension.displayName,
+                generatorType: savedDimension.generatorType,
+                defaultBlock: savedDimension.defaultBlock,
+                defaultFluid: 'minecraft:water',
+                seaLevel: 64,
+                minY: 0,
+                height: 256,
+                additionalBlocks: [],
+                specialFeatures: savedDimension.specialFeatures
+            };
+            
+            // Register dimension
+            this.dimensionGenerator.registerDimension(dimensionConfig);
+            
+            // Teleport player to dimension
+            this.teleportPlayerToDimension(player, dimensionConfig);
+            
+            // Create visual effects
+            this.createPortalEffects(player.position, dimensionConfig);
+            
+            // Send message to player
+            player.sendMessage(`§6Welcome to saved dimension: §f${savedDimension.displayName}!`);
+            player.sendMessage(`§7Originally created from: §f"${bookText}"`);
+        } catch (error) {
+            console.error('Error handling saved dimension for player:', error);
         }
     }
 

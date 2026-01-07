@@ -3,6 +3,7 @@ import { DimensionGenerator } from './core/DimensionGenerator';
 import { HashEngine } from './core/HashEngine';
 import { BlockRegistry } from './core/BlockRegistry';
 import { PortalHandler } from './events/PortalHandler';
+import { EasterEggDimensionManager } from './core/EasterEggDimensionManager';
 import { CustomBlockRegistry } from './core/CustomBlockRegistry';
 import { getCustomBlockRegistry } from './enhanced/CustomBlockRegistry';
 import { getBiomeGenerator } from './worldgen/BiomeGenerator';
@@ -18,6 +19,7 @@ let dimensionGenerator: DimensionGenerator;
 let hashEngine: HashEngine;
 let blockRegistry: BlockRegistry;
 let portalHandler: PortalHandler;
+let easterEggManager: EasterEggDimensionManager;
 let customBlockRegistry: CustomBlockRegistry;
 let enhancedCustomBlockRegistry: any;
 let biomeGenerator: any;
@@ -54,7 +56,8 @@ api.on('server.load', () => {
         hashEngine = new HashEngine();
         blockRegistry = new BlockRegistry(api);
         dimensionGenerator = new DimensionGenerator(api, hashEngine, blockRegistry);
-        portalHandler = new PortalHandler(api, dimensionGenerator, hashEngine);
+        easterEggManager = new EasterEggDimensionManager(api);
+        portalHandler = new PortalHandler(api, dimensionGenerator, hashEngine, easterEggManager);
         
         // Step 4: Register event handlers
         portalHandler.registerEvents();
@@ -67,6 +70,7 @@ api.on('server.load', () => {
         console.log('  World Feature Integration:', worldFeatureIntegration.getStatistics());
         console.log('  Sound System:', soundSystem.getStatistics());
         console.log('  Particle System:', particleSystem.getStatistics());
+        console.log('  Easter Egg Dimension Manager:', easterEggManager.getStatistics());
         
         console.log('Endless Dimensions Mod initialized successfully!');
     } catch (error) {
