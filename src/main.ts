@@ -31,7 +31,7 @@ let soundSystem: any;
 let particleSystem: any;
 
 // Initialize when the server loads
-api.on('server.load', () => {
+api.on('server.load', async () => {
     console.log('Initializing Endless Dimensions Mod...');
     
     try {

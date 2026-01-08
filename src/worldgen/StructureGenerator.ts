@@ -3,7 +3,7 @@ import { Logger } from '../utils/Logger';
 import { DimensionConfig } from '../core/DimensionGenerator';
 
 // Type definitions for structure generation
-interface StructureConfig {
+export interface StructureConfig {
     id: string;
     name: string;
     type: string;

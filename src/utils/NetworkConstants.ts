@@ -72,7 +72,7 @@ export function isBookRelevantPacket(packetId: number): boolean {
  * Check if item ID is a book type
  */
 export function isBookItem(itemId: string): boolean {
-    return Object.values(ITEM_IDS).includes(itemId as ITEM_IDS);
+    return Object.values(ITEM_IDS).includes(itemId as typeof ITEM_IDS[keyof typeof ITEM_IDS]);
 }
 
 /**

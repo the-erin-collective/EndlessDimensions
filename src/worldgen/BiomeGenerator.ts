@@ -3,7 +3,7 @@ import { Logger } from '../utils/Logger';
 import { DimensionConfig } from '../core/DimensionGenerator';
 
 // Type definitions for biome generation
-interface BiomeConfig {
+export interface BiomeConfig {
     id: string;
     name: string;
     temperature: number;

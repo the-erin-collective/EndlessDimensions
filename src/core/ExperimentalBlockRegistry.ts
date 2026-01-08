@@ -141,7 +141,7 @@ export class ExperimentalBlockRegistry {
       const patch = parts[2] || 0;
 
       // Determine experimental level
-      let experimentalLevel: 'stable' as const;
+      let experimentalLevel: 'stable' | 'experimental' | 'beta' | 'alpha' = 'stable';
       let isSnapshot = false;
 
       if (version.includes('experimental') || version.includes('snapshot')) {

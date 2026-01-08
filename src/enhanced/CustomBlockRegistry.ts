@@ -268,7 +268,7 @@ export class CustomBlockRegistry {
             'cloud_block': { transparent: true, gravity: false, solid: false, replaceable: true },
             'void_stone': { transparent: false, luminous: true, solid: true },
             'sky_stone': { transparent: false, solid: true },
-            'end_wood': { transparent: false, solid: true, requires_tool: true }
+            'end_wood': { transparent: false, solid: true }
         };
         
         const base = baseProperties[blockType] || {};

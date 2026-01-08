@@ -5,7 +5,7 @@ import { BlockRegistry } from './BlockRegistry';
 export interface DimensionConfig {
     id: string;
     name: string;
-    generatorType: 'noise' | 'flat' | 'void' | 'floating_islands' | 'the_end' | 'custom';
+    generatorType: 'noise' | 'flat' | 'void' | 'floating_islands' | 'the_end' | 'custom' | 'nether';
     defaultBlock: string;
     defaultFluid: string;
     seaLevel: number;
@@ -58,12 +58,12 @@ export class DimensionGenerator {
         const config: DimensionConfig = {
             id: dimensionId,
             name: easterEgg.displayName,
-            generatorType: easterEgg.generatorType as 'noise' | 'flat' | 'void' | 'floating_islands' | 'the_end' | 'custom',
+            generatorType: easterEgg.generatorType as 'noise' | 'flat' | 'void' | 'floating_islands' | 'the_end' | 'custom' | 'nether',
             defaultBlock: easterEgg.defaultBlock,
             defaultFluid: this.selectFluid(seed + 1),
-            seaLevel: this.calculateSeaLevel(seed + 2, easterEgg.generatorType as 'flat' | 'custom' | 'void' | 'noise' | 'the_end' | 'floating_islands'),
-            minY: this.calculateMinY(seed + 3, easterEgg.generatorType as 'flat' | 'custom' | 'void' | 'noise' | 'the_end' | 'floating_islands'),
-            height: this.calculateHeight(seed + 4, easterEgg.generatorType as 'flat' | 'custom' | 'void' | 'noise' | 'the_end' | 'floating_islands'),
+            seaLevel: this.calculateSeaLevel(seed + 2, easterEgg.generatorType as 'flat' | 'custom' | 'void' | 'noise' | 'the_end' | 'floating_islands' | 'nether'),
+            minY: this.calculateMinY(seed + 3, easterEgg.generatorType as 'flat' | 'custom' | 'void' | 'noise' | 'the_end' | 'floating_islands' | 'nether'),
+            height: this.calculateHeight(seed + 4, easterEgg.generatorType as 'flat' | 'custom' | 'void' | 'noise' | 'the_end' | 'floating_islands' | 'nether'),
             additionalBlocks: this.generateAdditionalBlocks(seedBigInt + 5n, 8),
             specialFeatures: easterEgg.specialFeatures
         };
@@ -115,7 +115,7 @@ export class DimensionGenerator {
      * @returns Generator type
      */
     private selectGeneratorType(seed: number): DimensionConfig['generatorType'] {
-        const types: DimensionConfig['generatorType'][] = ['noise', 'flat', 'void', 'floating_islands', 'the_end'];
+        const types: DimensionConfig['generatorType'][] = ['noise', 'flat', 'void', 'floating_islands', 'the_end', 'custom', 'nether'];
         const random = this.createSeededRandom(seed);
         const index = Math.floor(random() * types.length);
         return types[index];
@@ -148,6 +148,8 @@ export class DimensionGenerator {
                 return Math.floor(random() * 32) + 32; // 32-63
             case 'flat':
                 return Math.floor(random() * 64) + 32; // 32-95
+            case 'nether':
+                return Math.floor(random() * 32) + 31; // 31-62 (nether-like)
             case 'noise':
             default:
                 return Math.floor(random() * 64) + 32; // 32-95
@@ -172,6 +174,8 @@ export class DimensionGenerator {
                 return 0;
             case 'flat':
                 return 0;
+            case 'nether':
+                return 0; // Nether starts at Y=0
             case 'noise':
             default:
                 return Math.floor(random() * 16) - 64; // -64 to -48
@@ -196,6 +200,8 @@ export class DimensionGenerator {
                 return Math.floor(random() * 128) + 128; // 128-255
             case 'the_end':
                 return 256;
+            case 'nether':
+                return 128; // Nether height
             case 'noise':
             default:
                 return Math.floor(random() * 256) + 128; // 128-383
