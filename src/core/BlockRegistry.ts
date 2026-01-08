@@ -1,6 +1,6 @@
 /// <reference types="@epi-studio/moud-sdk" />
 import { Logger } from '../utils/Logger';
-import * as fs from 'fs';
+import { getMoudFileSystem } from '../utils/MoudFileSystem';
 import * as path from 'path';
 import * as https from 'https';
 
@@ -17,7 +17,6 @@ export class BlockRegistry {
         this.allBlocks = [];
         this.blacklistedBlocks = new Set();
         this.safeBlocks = [];
-        this.initializeBlacklist();
         // Note: loadBlockRegistry is now async and should be called after construction
     }
 
@@ -25,6 +24,7 @@ export class BlockRegistry {
      * Initialize the block registry (must be called after construction)
      */
     public async initialize(): Promise<void> {
+        await this.initializeBlacklist();
         await this.loadBlockRegistry();
     }
 
@@ -32,10 +32,38 @@ export class BlockRegistry {
      * Initialize the blacklist of blocks that should NOT be used as default blocks
      * Loads from external JSON file for better organization
      */
-    private initializeBlacklist(): void {
+    private async initializeBlacklist(): Promise<void> {
         try {
-            const blacklistPath = path.join(__dirname, '..', 'data', 'blockBlacklist.json');
-            const blacklistData = JSON.parse(fs.readFileSync(blacklistPath, 'utf8'));
+            const moudFs = getMoudFileSystem();
+            
+            // Try multiple possible paths for blacklist file
+            const possiblePaths = [
+                path.join(process.cwd(), 'src', 'data', 'blockBlacklist.json'),
+                path.join(__dirname, '..', 'data', 'blockBlacklist.json'),
+                path.join('.', 'src', 'data', 'blockBlacklist.json'),
+                './src/data/blockBlacklist.json'
+            ];
+            
+            let blacklistData = null;
+            let usedPath = null;
+            
+            for (const possiblePath of possiblePaths) {
+                try {
+                    this.logger.debug(`Trying to load blacklist from: ${possiblePath}`);
+                    if (await moudFs.existsSync(possiblePath)) {
+                        const content = await moudFs.readFileSync(possiblePath, 'utf8');
+                        blacklistData = JSON.parse(content);
+                        usedPath = possiblePath;
+                        break;
+                    }
+                } catch (pathError) {
+                    this.logger.debug(`Failed to load from ${possiblePath}: ${pathError}`);
+                }
+            }
+            
+            if (!blacklistData) {
+                throw new Error('Could not find or read blockBlacklist.json from any location');
+            }
             
             this.blacklistedBlocks = new Set();
             
@@ -47,7 +75,7 @@ export class BlockRegistry {
                 }
             }
             
-            this.logger.info(`Loaded blacklist with ${this.blacklistedBlocks.size} blocks from ${Object.keys(blacklistData.categories).length} categories`);
+            this.logger.info(`Loaded blacklist with ${this.blacklistedBlocks.size} blocks from ${Object.keys(blacklistData.categories).length} categories using path: ${usedPath}`);
             
         } catch (error) {
             this.logger.error('Failed to load block blacklist from file, using fallback minimal blacklist', error);

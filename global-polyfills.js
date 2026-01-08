@@ -102,17 +102,29 @@ globalThis.crypto = {
 };
 
 // FS polyfill using Moud's api.internal.fs
-// Note: This will only work when the 'api' global is available (during runtime)
+// Note: This will only work when 'api' global is available (during runtime)
 globalThis.fs = {
     existsSync: function(path) {
         try {
+            // Check if Moud API is available
             if (typeof api !== 'undefined' && api.internal && api.internal.fs) {
                 // Use Moud's filesystem API
                 api.internal.fs.stat(path);
                 return true;
             }
+            
+            // If no Moud API, try Node.js fs
+            if (typeof require !== 'undefined') {
+                try {
+                    const fs = require('fs');
+                    return fs.existsSync(path);
+                } catch (e) {
+                    // Node.js fs not available either
+                }
+            }
+            
             console.warn('Moud API not available, using fallback for fs.existsSync()');
-            return false; // Fallback for when api is not available
+            return false; // Final fallback
         } catch (error) {
             console.warn('Error in fs.existsSync():', error);
             return false;
@@ -120,49 +132,121 @@ globalThis.fs = {
     },
     
     readFileSync: function(path, encoding) {
+        // Check if Moud API is available
         if (typeof api !== 'undefined' && api.internal && api.internal.fs) {
             return api.internal.fs.readFile(path, encoding || 'utf8');
         }
+        
+        // If no Moud API, try Node.js fs
+        if (typeof require !== 'undefined') {
+            try {
+                const fs = require('fs');
+                return fs.readFileSync(path, encoding || 'utf8');
+            } catch (e) {
+                console.error('Fallback fs.readFileSync failed:', e);
+            }
+        }
+        
         console.warn('Moud API not available, using fallback for fs.readFileSync()');
-        return ''; // Fallback
+        throw new Error('File system not available');
     },
     
     writeFileSync: function(path, data, encoding) {
+        // Check if Moud API is available
         if (typeof api !== 'undefined' && api.internal && api.internal.fs) {
             return api.internal.fs.writeFile(path, data, encoding || 'utf8');
         }
+        
+        // If no Moud API, try Node.js fs
+        if (typeof require !== 'undefined') {
+            try {
+                const fs = require('fs');
+                return fs.writeFileSync(path, data, encoding || 'utf8');
+            } catch (e) {
+                console.error('Fallback fs.writeFileSync failed:', e);
+            }
+        }
+        
         console.warn('Moud API not available, using fallback for fs.writeFileSync()');
         // No-op fallback
     },
     
     mkdirSync: function(path, options) {
+        // Check if Moud API is available
         if (typeof api !== 'undefined' && api.internal && api.internal.fs) {
             return api.internal.fs.mkdir(path, options);
         }
+        
+        // If no Moud API, try Node.js fs
+        if (typeof require !== 'undefined') {
+            try {
+                const fs = require('fs');
+                return fs.mkdirSync(path, options);
+            } catch (e) {
+                console.error('Fallback fs.mkdirSync failed:', e);
+            }
+        }
+        
         console.warn('Moud API not available, using fallback for fs.mkdirSync()');
         // No-op fallback
     },
     
     readdirSync: function(path) {
+        // Check if Moud API is available
         if (typeof api !== 'undefined' && api.internal && api.internal.fs) {
             return api.internal.fs.readdir(path);
         }
+        
+        // If no Moud API, try Node.js fs
+        if (typeof require !== 'undefined') {
+            try {
+                const fs = require('fs');
+                return fs.readdirSync(path);
+            } catch (e) {
+                console.error('Fallback fs.readdirSync failed:', e);
+            }
+        }
+        
         console.warn('Moud API not available, using fallback for fs.readdirSync()');
-        return []; // Fallback
+        return []; // Final fallback
     },
     
     statSync: function(path) {
+        // Check if Moud API is available
         if (typeof api !== 'undefined' && api.internal && api.internal.fs) {
             return api.internal.fs.stat(path);
         }
+        
+        // If no Moud API, try Node.js fs
+        if (typeof require !== 'undefined') {
+            try {
+                const fs = require('fs');
+                return fs.statSync(path);
+            } catch (e) {
+                console.error('Fallback fs.statSync failed:', e);
+            }
+        }
+        
         console.warn('Moud API not available, using fallback for fs.statSync()');
-        return { isFile: () => false, isDirectory: () => false }; // Fallback
+        return { isFile: () => false, isDirectory: () => false }; // Final fallback
     },
     
     unlinkSync: function(path) {
+        // Check if Moud API is available
         if (typeof api !== 'undefined' && api.internal && api.internal.fs) {
             return api.internal.fs.unlink(path);
         }
+        
+        // If no Moud API, try Node.js fs
+        if (typeof require !== 'undefined') {
+            try {
+                const fs = require('fs');
+                return fs.unlinkSync(path);
+            } catch (e) {
+                console.error('Fallback fs.unlinkSync failed:', e);
+            }
+        }
+        
         console.warn('Moud API not available, using fallback for fs.unlinkSync()');
         // No-op fallback
     }

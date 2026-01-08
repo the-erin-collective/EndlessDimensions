@@ -57,8 +57,13 @@ api.on('server.load', async () => {
         // Step 3: Initialize core systems (now with custom blocks in registry)
         hashEngine = new HashEngine();
         blockRegistry = new BlockRegistry(api);
+        await blockRegistry.initialize(); // Initialize block registry asynchronously
         dimensionGenerator = new DimensionGenerator(api, hashEngine, blockRegistry);
         easterEggManager = new EasterEggDimensionManager(api);
+        
+        // Wait for easter egg manager to initialize
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
         stateManager = new CentralizedStateManager(api);
         portalHandler = new PortalHandler(api, dimensionGenerator, hashEngine, easterEggManager);
         

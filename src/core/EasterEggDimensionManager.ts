@@ -1,7 +1,7 @@
 /// <reference types="@epi-studio/moud-sdk" />
 import { Logger } from '../utils/Logger';
 import { EasterEggDimension } from './HashEngine';
-import * as fs from 'fs';
+import { getMoudFileSystem } from '../utils/MoudFileSystem';
 import * as path from 'path';
 
 export interface SavedEasterEggDimension {
@@ -25,18 +25,44 @@ export class EasterEggDimensionManager {
         this.logger = new Logger('EasterEggDimensionManager');
         this.easterEggFolderPath = path.join(process.cwd(), 'src', 'data', 'easter_egg_dimensions');
         this.savedDimensions = new Map();
-        this.ensureEasterEggFolder();
-        this.loadSavedDimensions();
+        this.initializeEasterEggFolder().then(() => {
+            this.loadSavedDimensions();
+        });
     }
 
     /**
-     * Ensure the easter egg dimensions folder exists
+     * Ensure easter egg dimensions folder exists
      */
-    private ensureEasterEggFolder(): void {
+    private async initializeEasterEggFolder(): Promise<void> {
         try {
-            if (!fs.existsSync(this.easterEggFolderPath)) {
-                fs.mkdirSync(this.easterEggFolderPath, { recursive: true });
-                this.logger.info(`Created easter egg dimensions folder: ${this.easterEggFolderPath}`);
+            const moudFs = getMoudFileSystem();
+            
+            // Try multiple possible paths for easter egg folder
+            const possiblePaths = [
+                path.join(process.cwd(), 'src', 'data', 'easter_egg_dimensions'),
+                path.join(__dirname, '..', 'data', 'easter_egg_dimensions'),
+                path.join('.', 'src', 'data', 'easter_egg_dimensions'),
+                './src/data/easter_egg_dimensions'
+            ];
+            
+            let folderCreated = false;
+            
+            for (const possiblePath of possiblePaths) {
+                try {
+                    if (!(await moudFs.existsSync(possiblePath))) {
+                        await moudFs.mkdirSync(possiblePath, { recursive: true });
+                        this.logger.info(`Created easter egg dimensions folder: ${possiblePath}`);
+                    }
+                    this.easterEggFolderPath = possiblePath;
+                    folderCreated = true;
+                    break;
+                } catch (pathError) {
+                    this.logger.debug(`Failed to create folder at ${possiblePath}: ${pathError}`);
+                }
+            }
+            
+            if (!folderCreated) {
+                throw new Error('Could not create easter egg dimensions folder at any location');
             }
         } catch (error) {
             this.logger.error('Failed to create easter egg dimensions folder', error);
@@ -49,7 +75,7 @@ export class EasterEggDimensionManager {
      * @param dimension The easter egg dimension configuration
      * @param dimensionId The generated dimension ID
      */
-    public saveEasterEggDimension(easterEggString: string, dimension: EasterEggDimension, dimensionId: string): void {
+    public async saveEasterEggDimension(easterEggString: string, dimension: EasterEggDimension, dimensionId: string): Promise<void> {
         try {
             const savedDimension: SavedEasterEggDimension = {
                 ...dimension,
@@ -57,8 +83,9 @@ export class EasterEggDimensionManager {
                 dimensionId
             };
 
+            const moudFs = getMoudFileSystem();
             const filePath = path.join(this.easterEggFolderPath, `${easterEggString}.json`);
-            fs.writeFileSync(filePath, JSON.stringify(savedDimension, null, 2));
+            await moudFs.writeFileSync(filePath, JSON.stringify(savedDimension, null, 2));
 
             this.savedDimensions.set(easterEggString, savedDimension);
             this.logger.info(`Saved easter egg dimension: ${easterEggString} -> ${dimensionId}`);
@@ -70,18 +97,20 @@ export class EasterEggDimensionManager {
     /**
      * Load all saved easter egg dimensions from folder
      */
-    private loadSavedDimensions(): void {
+    private async loadSavedDimensions(): Promise<void> {
         try {
-            if (!fs.existsSync(this.easterEggFolderPath)) {
+            const moudFs = getMoudFileSystem();
+            
+            if (!(await moudFs.existsSync(this.easterEggFolderPath))) {
                 return;
             }
 
-            const files = fs.readdirSync(this.easterEggFolderPath);
+            const files = await moudFs.readdirSync(this.easterEggFolderPath);
             for (const file of files) {
                 if (file.endsWith('.json')) {
                     try {
                         const filePath = path.join(this.easterEggFolderPath, file);
-                        const content = fs.readFileSync(filePath, 'utf8');
+                        const content = await moudFs.readFileSync(filePath, 'utf8');
                         const dimension: SavedEasterEggDimension = JSON.parse(content);
                         const easterEggString = path.basename(file, '.json');
                         
@@ -121,12 +150,13 @@ export class EasterEggDimensionManager {
      * @param easterEggString The easter egg string to delete
      * @returns True if deleted, false if not found
      */
-    public deleteSavedDimension(easterEggString: string): boolean {
+    public async deleteSavedDimension(easterEggString: string): Promise<boolean> {
         try {
+            const moudFs = getMoudFileSystem();
             const filePath = path.join(this.easterEggFolderPath, `${easterEggString}.json`);
             
-            if (fs.existsSync(filePath)) {
-                fs.unlinkSync(filePath);
+            if (await moudFs.existsSync(filePath)) {
+                await moudFs.unlinkSync(filePath);
                 this.savedDimensions.delete(easterEggString);
                 this.logger.info(`Deleted saved easter egg dimension: ${easterEggString}`);
                 return true;
@@ -154,9 +184,9 @@ export class EasterEggDimensionManager {
     /**
      * Reload saved dimensions from disk
      */
-    public reloadFromDisk(): void {
+    public async reloadFromDisk(): Promise<void> {
         this.savedDimensions.clear();
-        this.loadSavedDimensions();
+        await this.loadSavedDimensions();
         this.logger.info('Reloaded easter egg dimensions from disk');
     }
 }
