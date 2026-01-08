@@ -8,7 +8,7 @@
     "build:ts": "tsc",
     "dev": "npm run build:ts && node run-moud.js dev",
     "dev:watch": "concurrently \"npx tsc --watch\" \"moud dev --watch\"",
-    "build": "tsc && moud pack",
+    "build": "tsc && moud pack && node post-build.js",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
