@@ -160,33 +160,84 @@ export class BlockRegistry {
      * Fetch block list from external Minecraft API
      */
     private async fetchBlocksFromAPI(): Promise<string[]> {
-        return new Promise((resolve, reject) => {
+        const fallbacks = [
+            'minecraft:stone', 'minecraft:granite', 'minecraft:polished_granite', 'minecraft:diorite',
+            'minecraft:polished_diorite', 'minecraft:andesite', 'minecraft:polished_andesite', 'minecraft:grass_block',
+            'minecraft:dirt', 'minecraft:coarse_dirt', 'minecraft:podzol', 'minecraft:cobblestone', 'minecraft:oak_planks',
+            'minecraft:spruce_planks', 'minecraft:birch_planks', 'minecraft:jungle_planks', 'minecraft:acacia_planks',
+            'minecraft:dark_oak_planks', 'minecraft:mangrove_planks', 'minecraft:cherry_planks', 'minecraft:bamboo_planks',
+            'minecraft:bedrock', 'minecraft:sand', 'minecraft:red_sand', 'minecraft:gravel', 'minecraft:gold_ore',
+            'minecraft:iron_ore', 'minecraft:coal_ore', 'minecraft:nether_gold_ore', 'minecraft:oak_log',
+            'minecraft:spruce_log', 'minecraft:birch_log', 'minecraft:jungle_log', 'minecraft:acacia_log',
+            'minecraft:dark_oak_log', 'minecraft:mangrove_log', 'minecraft:cherry_log', 'minecraft:glass',
+            'minecraft:lapis_ore', 'minecraft:lapis_block', 'minecraft:sandstone', 'minecraft:chiseled_sandstone',
+            'minecraft:cut_sandstone', 'minecraft:white_wool', 'minecraft:orange_wool', 'minecraft:magenta_wool',
+            'minecraft:light_blue_wool', 'minecraft:yellow_wool', 'minecraft:lime_wool', 'minecraft:pink_wool',
+            'minecraft:gray_wool', 'minecraft:light_gray_wool', 'minecraft:cyan_wool', 'minecraft:purple_wool',
+            'minecraft:blue_wool', 'minecraft:brown_wool', 'minecraft:green_wool', 'minecraft:red_wool',
+            'minecraft:black_wool', 'minecraft:oak_leaves', 'minecraft:spruce_leaves', 'minecraft:birch_leaves',
+            'minecraft:jungle_leaves', 'minecraft:acacia_leaves', 'minecraft:dark_oak_leaves', 'minecraft:mangrove_leaves',
+            'minecraft:cherry_leaves', 'minecraft:azalea_leaves', 'minecraft:flowering_azalea_leaves',
+            'minecraft:gold_block', 'minecraft:iron_block', 'minecraft:bricks', 'minecraft:mossy_cobblestone',
+            'minecraft:obsidian', 'minecraft:diamond_ore', 'minecraft:diamond_block', 'minecraft:netherrack',
+            'minecraft:soul_sand', 'minecraft:soul_soil', 'minecraft:basalt', 'minecraft:polished_basalt',
+            'minecraft:end_stone', 'minecraft:emerald_ore', 'minecraft:emerald_block', 'minecraft:quartz_block',
+            'minecraft:white_terracotta', 'minecraft:orange_terracotta', 'minecraft:magenta_terracotta',
+            'minecraft:light_blue_terracotta', 'minecraft:yellow_terracotta', 'minecraft:lime_terracotta',
+            'minecraft:pink_terracotta', 'minecraft:gray_terracotta', 'minecraft:light_gray_terracotta',
+            'minecraft:cyan_terracotta', 'minecraft:purple_terracotta', 'minecraft:blue_terracotta',
+            'minecraft:brown_terracotta', 'minecraft:green_terracotta', 'minecraft:red_terracotta',
+            'minecraft:black_terracotta', 'minecraft:prismarine', 'minecraft:prismarine_bricks',
+            'minecraft:dark_prismarine', 'minecraft:sea_lantern', 'minecraft:terracotta', 'minecraft:coal_block',
+            'minecraft:packed_ice', 'minecraft:red_sandstone', 'minecraft:purpur_block', 'minecraft:purpur_pillar',
+            'minecraft:magma_block', 'minecraft:nether_wart_block', 'minecraft:red_nether_bricks',
+            'minecraft:bone_block', 'minecraft:blue_ice', 'minecraft:netherite_block', 'minecraft:ancient_debris',
+            'minecraft:crying_obsidian', 'minecraft:blackstone', 'minecraft:gilded_blackstone',
+            'minecraft:polished_blackstone', 'minecraft:chiseled_polished_blackstone', 'minecraft:polished_blackstone_bricks',
+            'minecraft:cracked_polished_blackstone_bricks', 'minecraft:tuff', 'minecraft:calcite', 'minecraft:dripstone_block',
+            'minecraft:deepslate', 'minecraft:cobbled_deepslate', 'minecraft:polished_deepslate',
+            'minecraft:deepslate_bricks', 'minecraft:deepslate_tiles', 'minecraft:chiseled_deepslate',
+            'minecraft:cracked_deepslate_bricks', 'minecraft:cracked_deepslate_tiles', 'minecraft:sculk',
+            'minecraft:mud', 'minecraft:mud_bricks', 'minecraft:packed_mud'
+        ];
+
+        return new Promise((resolve) => {
             const url = 'http://minecraft-ids.grahamedgecombe.com/items.json';
 
-            https.get(url, (response) => {
-                let data = '';
+            // Safety timeout for API fetch
+            const timeout = setTimeout(() => {
+                this.logger.warn('Block list API request timed out, using fallback list.');
+                resolve(fallbacks);
+            }, 3000);
 
-                response.on('data', (chunk) => {
-                    data += chunk;
+            try {
+                https.get(url, (response) => {
+                    let data = '';
+                    response.on('data', (chunk) => { data += chunk; });
+                    response.on('end', () => {
+                        clearTimeout(timeout);
+                        try {
+                            const items = JSON.parse(data);
+                            const blocks = items
+                                .filter((item: any) => item.type < 256)
+                                .map((item: any) => `minecraft:${item.text_type}`)
+                                .filter((block: string, index: number, self: string[]) => self.indexOf(block) === index);
+                            resolve(blocks.length > 0 ? blocks : fallbacks);
+                        } catch (error) {
+                            this.logger.error('Failed to parse API response, using fallbacks.', error);
+                            resolve(fallbacks);
+                        }
+                    });
+                }).on('error', (error) => {
+                    clearTimeout(timeout);
+                    this.logger.warn(`API fetch failed: ${error.message}. Using fallback block list.`);
+                    resolve(fallbacks);
                 });
-
-                response.on('end', () => {
-                    try {
-                        const items = JSON.parse(data);
-                        // Filter only blocks (type < 256 typically indicates blocks)
-                        const blocks = items
-                            .filter((item: any) => item.type < 256)
-                            .map((item: any) => `minecraft:${item.text_type}`)
-                            .filter((block: string, index: number, self: string[]) => self.indexOf(block) === index); // Remove duplicates
-
-                        resolve(blocks);
-                    } catch (error) {
-                        reject(new Error(`Failed to parse API response: ${error}`));
-                    }
-                });
-            }).on('error', (error) => {
-                reject(new Error(`Failed to fetch from API: ${error}`));
-            });
+            } catch (err) {
+                clearTimeout(timeout);
+                this.logger.warn('Environment does not support external HTTP requests. Using fallbacks.');
+                resolve(fallbacks);
+            }
         });
     }
 

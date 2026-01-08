@@ -1,6 +1,6 @@
 /// <reference types="@epi-studio/moud-sdk" />
 
-const MOD_VERSION = '1.0.4';
+const MOD_VERSION = '1.0.8';
 console.log(`[MAIN] Endless Dimensions Mod v${MOD_VERSION} starting...`);
 
 // Import core logic
@@ -31,13 +31,13 @@ function logDetailedApi(obj: any, label: string = 'api'): void {
         console.log(`[MAIN] ${label} keys: ${keys.join(', ')}`);
 
         // Log types of critical keys to verify they are ready
-        const critical = ['internal', 'state', 'events', 'server', 'world', 'commands'];
+        const critical = ['server', 'world', 'commands', 'async', 'assets'];
         critical.forEach(key => {
             console.log(`[MAIN] api.${key} type: ${typeof obj[key]}`);
         });
 
         if (obj.internal) {
-            console.log(`[MAIN] api.internal keys: ${Object.keys(obj.internal).join(', ')}`);
+            console.log(`[MAIN] api.internal found (non-enumerable or dynamic)`);
         }
     } catch (e) {
         console.log(`[MAIN] Error during API introspection: ${e}`);
@@ -50,10 +50,12 @@ function waitForMoudApi(): Promise<void> {
         const checkDetailedApi = () => {
             const potentialApi = (globalThis as any).api;
             if (potentialApi) {
+                // Focus on core sub-systems confirmed to exist in SDK 0.7.3
                 const hasServer = !!potentialApi.server;
                 const hasWorld = !!potentialApi.world;
+                const hasAsync = !!potentialApi.async;
 
-                if (hasServer && hasWorld) {
+                if (hasServer && hasWorld && hasAsync) {
                     return true;
                 }
             }

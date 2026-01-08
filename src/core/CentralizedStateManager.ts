@@ -138,7 +138,7 @@ export class CentralizedStateManager {
 
         this.logger.debug('Subscribed to global state changes');
       } else {
-        this.logger.warn('API state management not available - state synchronization disabled');
+        this.logger.debug('API state management not available - state synchronization disabled');
       }
     } catch (error) {
       this.logger.error('Failed to subscribe to global state:', error);
