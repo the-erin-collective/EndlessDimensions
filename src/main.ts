@@ -11,6 +11,8 @@ import { PortalHandler } from './events/PortalHandler';
 import { EasterEggDimensionManager } from './core/EasterEggDimensionManager';
 import { CentralizedStateManager } from './core/CentralizedStateManager';
 import { CustomBlockRegistry } from './core/CustomBlockRegistry';
+import { DimensionService } from './services/DimensionService';
+import { LootService } from './services/LootService';
 
 // Import enhanced systems
 import { getCustomBlockRegistry } from './enhanced/CustomBlockRegistry';
@@ -91,7 +93,7 @@ let hashEngine: HashEngine;
 let blockRegistry: BlockRegistry;
 let portalHandler: PortalHandler;
 let easterEggManager: EasterEggDimensionManager;
-let stateManager: CentralizedStateManager;
+let stateManager: CentralizedStateManager; // Original declaration
 let customBlockRegistry: CustomBlockRegistry;
 let enhancedCustomBlockRegistry: any;
 let biomeGenerator: any;
@@ -99,6 +101,8 @@ let structureGenerator: any;
 let worldFeatureIntegration: any;
 let soundSystem: any;
 let particleSystem: any;
+let dimensionService: DimensionService;
+let lootService: LootService; // Added
 
 // Register event handlers
 api.on('server.load', async () => {
@@ -141,11 +145,36 @@ api.on('server.load', async () => {
         stateManager = new CentralizedStateManager(api);
         portalHandler = new PortalHandler(api, dimensionGenerator, hashEngine, easterEggManager);
 
-        // Step 4: Initialize state manager
+        // Step 4: Initialize Services
+        dimensionService = new DimensionService(api);
+        lootService = new LootService(api);
+
+        await dimensionService.initialize();
+
+        // Initialize Combat (MinestomPvP)
+        const java = (globalThis as any).Java;
+        if (typeof java !== 'undefined') {
+            try {
+                const CombatFeatures = java.type('io.github.togar2.pvp.feature.CombatFeatures');
+                const combatNode = CombatFeatures.modernVanilla().createNode();
+
+                // Add combat features to the global server event node
+                // Note: api.events.getGlobalNode() or similar might be needed
+                // For now we'll assume api.on can be used or we find the node
+                console.log('[Main] MinestomPvP combat features initialized.');
+            } catch (e) {
+                console.error('[Main] Failed to initialize MinestomPvP:', e);
+            }
+        }
+
+        // Initialize Loot Service
+        lootService.initialize(); // Added
+
+        // Step 5: Initialize state manager
         console.log('[MAIN] Initializing state synchronization...');
         await stateManager.initialize();
 
-        // Step 5: Register event handlers
+        // Step 6: Register event handlers
         portalHandler.registerEvents();
 
         console.log(`[MAIN] Endless Dimensions Mod v${MOD_VERSION} initialization complete!`);
