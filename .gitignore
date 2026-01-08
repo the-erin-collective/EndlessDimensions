@@ -1,11 +1,14 @@
 # Dependencies
 node_modules/
+!node_modules/@epi-studio/
+libs/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
 # Build outputs
 dist/
+!dist/
 build/
 *.jar
 *.zip
@@ -41,3 +44,6 @@ config/
 # Temporary files
 *.tmp
 *.temp
+/dist
+/libs
+/.moud

@@ -5,8 +5,10 @@
   "main": "dist/index.js",
   "moud:main": "src/main.ts",
   "scripts": {
-    "dev": "moud dev --watch",
-    "build": "moud pack",
+    "build:ts": "tsc",
+    "dev": "npm run build:ts && node run-moud.js dev",
+    "dev:watch": "concurrently \"npx tsc --watch\" \"moud dev --watch\"",
+    "build": "tsc && moud pack",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
