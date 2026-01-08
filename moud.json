@@ -5,7 +5,7 @@
   "description": "Replicates 20w14infinite snapshot mechanics with unlimited block possibilities",
   "author": "EndlessDimensions",
   "minecraftVersion": "1.20.1",
-  "entryPoint": "dist/main.js",
+  "entryPoint": "entry.js",
   "dependencies": [],
   "mixins": []
 }

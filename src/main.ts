@@ -1,4 +1,9 @@
 /// <reference types="@epi-studio/moud-sdk" />
+
+const MOD_VERSION = '1.0.4';
+console.log(`[MAIN] Endless Dimensions Mod v${MOD_VERSION} starting...`);
+
+// Import core logic
 import { DimensionGenerator } from './core/DimensionGenerator';
 import { HashEngine } from './core/HashEngine';
 import { BlockRegistry } from './core/BlockRegistry';
@@ -6,6 +11,8 @@ import { PortalHandler } from './events/PortalHandler';
 import { EasterEggDimensionManager } from './core/EasterEggDimensionManager';
 import { CentralizedStateManager } from './core/CentralizedStateManager';
 import { CustomBlockRegistry } from './core/CustomBlockRegistry';
+
+// Import enhanced systems
 import { getCustomBlockRegistry } from './enhanced/CustomBlockRegistry';
 import { getBiomeGenerator } from './worldgen/BiomeGenerator';
 import { getStructureGenerator } from './worldgen/StructureGenerator';
@@ -13,9 +20,70 @@ import { getWorldFeatureIntegration } from './worldgen/WorldFeatureIntegration';
 import { getSoundSystem } from './enhanced/SoundSystem';
 import { getParticleSystem } from './enhanced/ParticleSystem';
 
-console.log('Endless Dimensions Mod starting...');
+// Helper to log all available keys on the API object
+function logDetailedApi(obj: any, label: string = 'api'): void {
+    try {
+        if (!obj) {
+            console.log(`[MAIN] ${label} is null or undefined`);
+            return;
+        }
+        const keys = Object.keys(obj);
+        console.log(`[MAIN] ${label} keys: ${keys.join(', ')}`);
 
-// Initialize core systems
+        // Log types of critical keys to verify they are ready
+        const critical = ['internal', 'state', 'events', 'server', 'world', 'commands'];
+        critical.forEach(key => {
+            console.log(`[MAIN] api.${key} type: ${typeof obj[key]}`);
+        });
+
+        if (obj.internal) {
+            console.log(`[MAIN] api.internal keys: ${Object.keys(obj.internal).join(', ')}`);
+        }
+    } catch (e) {
+        console.log(`[MAIN] Error during API introspection: ${e}`);
+    }
+}
+
+// Simple API wait function
+function waitForMoudApi(): Promise<void> {
+    return new Promise<void>((resolve) => {
+        const checkDetailedApi = () => {
+            const potentialApi = (globalThis as any).api;
+            if (potentialApi) {
+                const hasServer = !!potentialApi.server;
+                const hasWorld = !!potentialApi.world;
+
+                if (hasServer && hasWorld) {
+                    return true;
+                }
+            }
+            return false;
+        };
+
+        if (checkDetailedApi()) {
+            resolve();
+            return;
+        }
+
+        const poll = setInterval(() => {
+            if (checkDetailedApi()) {
+                clearInterval(poll);
+                resolve();
+            }
+        }, 100);
+
+        // Timeout fallback
+        setTimeout(() => {
+            if (!checkDetailedApi()) {
+                console.warn('[MAIN] API check timed out after 5s, proceeding with available sub-systems.');
+                clearInterval(poll);
+                resolve();
+            }
+        }, 5000);
+    });
+}
+
+// Mod state variables
 let dimensionGenerator: DimensionGenerator;
 let hashEngine: HashEngine;
 let blockRegistry: BlockRegistry;
@@ -30,102 +98,71 @@ let worldFeatureIntegration: any;
 let soundSystem: any;
 let particleSystem: any;
 
-// Initialize when the server loads
+// Register event handlers
 api.on('server.load', async () => {
-    console.log('Initializing Endless Dimensions Mod...');
-    
+    console.log(`[MAIN] server.load received (v${MOD_VERSION})`);
+
+    // Wait for the bridge to confirm sub-systems are available
+    await waitForMoudApi();
+
+    console.log('[MAIN] Starting full system initialization...');
+    logDetailedApi((globalThis as any).api);
+
     try {
         // Step 1: Initialize Enhanced Systems
-        console.log('Initializing Enhanced Systems...');
         enhancedCustomBlockRegistry = getCustomBlockRegistry();
         biomeGenerator = getBiomeGenerator();
         structureGenerator = getStructureGenerator();
         worldFeatureIntegration = getWorldFeatureIntegration();
         soundSystem = getSoundSystem();
         particleSystem = getParticleSystem();
-        console.log('Enhanced Systems initialized');
-        
-        // Step 2: Register custom blocks (legacy system)
-        console.log('Creating CustomBlockRegistry...');
+        console.log('[MAIN] Enhanced Systems initialized');
+
+        // Step 2: Register custom blocks
         customBlockRegistry = new CustomBlockRegistry(api);
-        console.log('CustomBlockRegistry created:', customBlockRegistry);
-        
-        console.log('Calling registerCustomBlocks...');
         customBlockRegistry.registerCustomBlocks();
-        console.log('registerCustomBlocks completed');
-        
-        // Step 3: Initialize core systems (now with custom blocks in registry)
+        console.log('[MAIN] Custom blocks registered');
+
+        // Step 3: Initialize core systems
         hashEngine = new HashEngine();
         blockRegistry = new BlockRegistry(api);
-        await blockRegistry.initialize(); // Initialize block registry asynchronously
+
+        console.log('[MAIN] Loading block registry data...');
+        await blockRegistry.initialize();
+
         dimensionGenerator = new DimensionGenerator(api, hashEngine, blockRegistry);
         easterEggManager = new EasterEggDimensionManager(api);
-        
-        // Wait for easter egg manager to initialize
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
+
+        console.log('[MAIN] Loading easter egg dimensions...');
+        await easterEggManager.initialize();
+
         stateManager = new CentralizedStateManager(api);
         portalHandler = new PortalHandler(api, dimensionGenerator, hashEngine, easterEggManager);
-        
+
         // Step 4: Initialize state manager
+        console.log('[MAIN] Initializing state synchronization...');
         await stateManager.initialize();
-        
+
         // Step 5: Register event handlers
         portalHandler.registerEvents();
-        
-        // Step 6: Log initialization statistics
-        console.log('Enhanced Systems Statistics:');
-        console.log('  Custom Block Registry:', enhancedCustomBlockRegistry.getStatistics());
-        console.log('  Biome Generator:', biomeGenerator.getStatistics());
-        console.log('  Structure Generator:', structureGenerator.getStatistics());
-        console.log('  World Feature Integration:', worldFeatureIntegration.getStatistics());
-        console.log('  Sound System:', soundSystem.getStatistics());
-        console.log('  Particle System:', particleSystem.getStatistics());
-        console.log('  Easter Egg Dimension Manager:', easterEggManager.getStatistics());
-        
-        console.log('Endless Dimensions Mod initialized successfully!');
+
+        console.log(`[MAIN] Endless Dimensions Mod v${MOD_VERSION} initialization complete!`);
     } catch (error) {
-        console.error('Error during initialization:', error);
+        console.error('[MAIN] FATAL ERROR during initialization:', error);
     }
 });
 
-// Clean up on server shutdown
 api.on('server.shutdown', () => {
-    console.log('Endless Dimensions Mod shutting down...');
-    if (portalHandler) {
-        portalHandler.unregisterEvents();
-    }
-    
-    if (stateManager) {
-        stateManager.shutdown();
-    }
-    
-    // Clean up enhanced systems
-    if (enhancedCustomBlockRegistry) {
-        enhancedCustomBlockRegistry.clearCustomBlocks();
-    }
-    
-    if (biomeGenerator) {
-        biomeGenerator.clearBiomes();
-    }
-    
-    if (structureGenerator) {
-        structureGenerator.clearStructures();
-    }
-    
-    if (worldFeatureIntegration) {
-        worldFeatureIntegration.clearWorldFeatures();
-    }
-    
-    if (soundSystem) {
-        soundSystem.clearSounds();
-    }
-    
-    if (particleSystem) {
-        particleSystem.clearParticles();
-    }
-    
-    console.log('Endless Dimensions Mod shutdown complete');
+    console.log('[MAIN] Mod shutting down...');
+    if (portalHandler) portalHandler.unregisterEvents();
+    if (stateManager) stateManager.shutdown();
+    if (enhancedCustomBlockRegistry) enhancedCustomBlockRegistry.clearCustomBlocks();
+    if (biomeGenerator) biomeGenerator.clearBiomes();
+    if (structureGenerator) structureGenerator.clearStructures();
+    if (worldFeatureIntegration) worldFeatureIntegration.clearWorldFeatures();
+    if (soundSystem) soundSystem.clearSounds();
+    if (particleSystem) particleSystem.clearParticles();
+    console.log('[MAIN] Shutdown complete.');
 });
 
-console.log('Endless Dimensions Mod loaded!');
+console.log(`[MAIN] Mod loading complete (v${MOD_VERSION})`);

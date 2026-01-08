@@ -24,18 +24,26 @@ export class MoudFileSystem {
         }
 
         this.initPromise = new Promise((resolve) => {
-            const checkApi = () => {
-                if (typeof (globalThis as any).api !== 'undefined' && (globalThis as any).api.internal && (globalThis as any).api.internal.fs) {
-                    this.api = (globalThis as any).api;
-                    this.isApiAvailable = true;
-                    this.logger.info('Moud API is now available for file operations');
-                    resolve();
-                } else {
-                    // Check again in 10ms
-                    setTimeout(checkApi, 10);
-                }
+            const onReady = () => {
+                this.api = (globalThis as any).api;
+                this.isApiAvailable = true;
+                this.logger.info('Moud API is now available for file operations');
+                resolve();
             };
-            checkApi();
+
+            if ((globalThis as any).onMoudReady) {
+                (globalThis as any).onMoudReady(onReady);
+            } else {
+                const checkApi = () => {
+                    if (typeof (globalThis as any).api !== 'undefined' && (globalThis as any).api.internal && (globalThis as any).api.internal.fs) {
+                        onReady();
+                    } else {
+                        // Check again in 50ms
+                        setTimeout(checkApi, 50);
+                    }
+                };
+                checkApi();
+            }
         });
 
         return this.initPromise;
@@ -55,7 +63,7 @@ export class MoudFileSystem {
      */
     async existsSync(path: string): Promise<boolean> {
         await this.ensureApi();
-        
+
         try {
             if (this.api && this.api.internal && this.api.internal.fs) {
                 this.api.internal.fs.stat(path);
@@ -72,11 +80,11 @@ export class MoudFileSystem {
      */
     async readFileSync(path: string, encoding: string = 'utf8'): Promise<string> {
         await this.ensureApi();
-        
+
         if (this.api && this.api.internal && this.api.internal.fs) {
             return this.api.internal.fs.readFile(path, encoding);
         }
-        
+
         throw new Error('Moud API not available for file reading');
     }
 
@@ -85,11 +93,11 @@ export class MoudFileSystem {
      */
     async writeFileSync(path: string, data: string, encoding: string = 'utf8'): Promise<void> {
         await this.ensureApi();
-        
+
         if (this.api && this.api.internal && this.api.internal.fs) {
             return this.api.internal.fs.writeFile(path, data, encoding);
         }
-        
+
         throw new Error('Moud API not available for file writing');
     }
 
@@ -98,11 +106,11 @@ export class MoudFileSystem {
      */
     async mkdirSync(path: string, options?: any): Promise<void> {
         await this.ensureApi();
-        
+
         if (this.api && this.api.internal && this.api.internal.fs) {
             return this.api.internal.fs.mkdir(path, options);
         }
-        
+
         throw new Error('Moud API not available for directory creation');
     }
 
@@ -111,11 +119,11 @@ export class MoudFileSystem {
      */
     async readdirSync(path: string): Promise<string[]> {
         await this.ensureApi();
-        
+
         if (this.api && this.api.internal && this.api.internal.fs) {
             return this.api.internal.fs.readdir(path);
         }
-        
+
         throw new Error('Moud API not available for directory reading');
     }
 
@@ -124,11 +132,11 @@ export class MoudFileSystem {
      */
     async statSync(path: string): Promise<any> {
         await this.ensureApi();
-        
+
         if (this.api && this.api.internal && this.api.internal.fs) {
             return this.api.internal.fs.stat(path);
         }
-        
+
         throw new Error('Moud API not available for file stats');
     }
 
@@ -137,11 +145,11 @@ export class MoudFileSystem {
      */
     async unlinkSync(path: string): Promise<void> {
         await this.ensureApi();
-        
+
         if (this.api && this.api.internal && this.api.internal.fs) {
             return this.api.internal.fs.unlink(path);
         }
-        
+
         throw new Error('Moud API not available for file deletion');
     }
 

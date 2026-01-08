@@ -1,7 +1,6 @@
 /// <reference types="@epi-studio/moud-sdk" />
 import { Logger } from '../utils/Logger';
 import { BiomeJsonCompiler, CompiledDimensionJson } from './BiomeJsonCompiler';
-import * as fs from 'fs';
 import * as path from 'path';
 
 export interface InjectedDimension {
@@ -26,13 +25,23 @@ export class DynamicRegistryInjector {
         this.biomeCompiler = new BiomeJsonCompiler();
         this.injectedDimensions = new Map();
         this.datapackPath = path.join(process.cwd(), 'world', 'datapacks', 'endless');
-        this.ensureDatapackStructure();
+        // IMPORTANT: Do NOT call ensureDatapackStructure() here - wait for initialize()
+        this.logger.info('DynamicRegistryInjector constructor completed - datapack structure will be created when needed');
+    }
+
+    /**
+     * Initialize the injector (call this when Moud API is ready)
+     */
+    public async initialize(): Promise<void> {
+        this.logger.info('Initializing DynamicRegistryInjector...');
+        await this.ensureDatapackStructure();
+        this.logger.info('DynamicRegistryInjector initialized successfully');
     }
 
     /**
      * Ensure the datapack folder structure exists
      */
-    private ensureDatapackStructure(): void {
+    private async ensureDatapackStructure(): Promise<void> {
         try {
             const folders = [
                 this.datapackPath,
@@ -42,28 +51,88 @@ export class DynamicRegistryInjector {
                 path.join(this.datapackPath, 'data', 'endless', 'worldgen', 'placed_feature')
             ];
 
+            // Wait for Moud API to be available
+            await this.waitForMoudApi();
+
             for (const folder of folders) {
-                if (!fs.existsSync(folder)) {
-                    fs.mkdirSync(folder, { recursive: true });
-                    this.logger.debug(`Created folder: ${folder}`);
+                try {
+                    if (!(await this.fileExists(folder))) {
+                        await this.api.internal.fs.mkdir(folder, { recursive: true });
+                        this.logger.debug(`Created folder: ${folder}`);
+                    }
+                } catch (folderError) {
+                    this.logger.warn(`Failed to create folder ${folder}: ${folderError}`);
                 }
             }
 
             // Create pack.mcmeta if it doesn't exist
             const packMcmetaPath = path.join(this.datapackPath, 'pack.mcmeta');
-            if (!fs.existsSync(packMcmetaPath)) {
-                const packMcmeta = {
-                    pack: {
-                        pack_format: 48,
-                        description: 'Endless Dimensions - Dynamic Dimensions'
-                    }
-                };
-                fs.writeFileSync(packMcmetaPath, JSON.stringify(packMcmeta, null, 2));
-                this.logger.info('Created pack.mcmeta for endless datapack');
+            try {
+                if (!(await this.fileExists(packMcmetaPath))) {
+                    const packMcmeta = {
+                        pack: {
+                            pack_format: 48,
+                            description: 'Endless Dimensions - Dynamic Dimensions'
+                        }
+                    };
+                    await this.api.internal.fs.writeFile(packMcmetaPath, JSON.stringify(packMcmeta, null, 2));
+                    this.logger.info('Created pack.mcmeta for endless datapack');
+                }
+            } catch (metaError) {
+                this.logger.warn(`Failed to create pack.mcmeta: ${metaError}`);
             }
 
         } catch (error) {
             this.logger.error('Failed to ensure datapack structure', error);
+        }
+    }
+
+    /**
+     * Wait for Moud API to be available
+     */
+    private async waitForMoudApi(): Promise<void> {
+        const maxWaitTime = 10000; // 10 seconds max wait
+        const checkInterval = 100; // Check every 100ms
+        let waitTime = 0;
+
+        return new Promise<void>((resolve, reject) => {
+            const checkApi = () => {
+                try {
+                    if (this.api && this.api.internal && this.api.internal.fs) {
+                        // Test if we can actually use the API
+                        this.api.internal.fs.stat('.');
+                        resolve();
+                    } else {
+                        waitTime += checkInterval;
+                        if (waitTime >= maxWaitTime) {
+                            reject(new Error('Moud API not available after maximum wait time'));
+                        } else {
+                            setTimeout(checkApi, checkInterval);
+                        }
+                    }
+                } catch (error) {
+                    waitTime += checkInterval;
+                    if (waitTime >= maxWaitTime) {
+                        reject(new Error('Moud API not available after maximum wait time'));
+                    } else {
+                        setTimeout(checkApi, checkInterval);
+                    }
+                }
+            };
+
+            checkApi();
+        });
+    }
+
+    /**
+     * Check if a file exists using Moud API
+     */
+    private async fileExists(filePath: string): Promise<boolean> {
+        try {
+            await this.api.internal.fs.stat(filePath);
+            return true;
+        } catch (error) {
+            return false;
         }
     }
 

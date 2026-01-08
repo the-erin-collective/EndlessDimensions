@@ -1,303 +1,118 @@
-// Moud API polyfills for GraalJS compatibility
-// These polyfills use Moud's internal APIs instead of Node.js built-in modules
+/**
+ * MOUD API Polyfill & Compatibility Layer
+ * Features: require() shim, Proxy-guarded FS, and Ready-state Queue.
+ */
 
-// Node.js globals
-globalThis.__dirname = '.';
-globalThis.__filename = 'main.js';
-globalThis.process = {
-    env: {},
-    platform: 'minecraft',
-    arch: 'graaljs',
-    version: '1.0.0',
-    versions: {
-        node: '18.0.0'
+console.log('[POLYFILL] Starting polyfill initialization...');
+
+// --- 1. require() shim ---
+if (typeof globalThis.require === 'undefined' || typeof require === 'undefined') {
+    const requireShim = function (module) {
+        if (module === 'fs') return globalThis.fs;
+        if (module === 'path') {
+            return {
+                join: (...args) => args.filter(Boolean).map(a => String(a)).join('/').replace(/\/+/g, '/'),
+                dirname: (p) => p.split('/').slice(0, -1).join('/') || '.',
+                basename: (p) => p.split('/').pop(),
+                resolve: (...args) => args.filter(Boolean).map(a => String(a)).join('/').replace(/\/+/g, '/'),
+                sep: '/'
+            };
+        }
+        if (module === 'https' || module === 'http') {
+            return {
+                get: (url, callback) => {
+                    console.log('[POLYFILL] https.get called (shim): ' + url);
+                    return { on: (event, cb) => ({ on: (evt, c) => { } }) };
+                }
+            };
+        }
+        if (globalThis[module]) return globalThis[module];
+        return {};
+    };
+
+    if (typeof globalThis.require === 'undefined') globalThis.require = requireShim;
+}
+
+// --- 2. State Management ---
+const MoudBridge = {
+    ready: false,
+    queue: [],
+
+    check: function () {
+        let currentApi = null;
+        try { currentApi = globalThis.api || (typeof api !== 'undefined' ? api : null); } catch (e) { }
+
+        // Relaxed check: we only absolutely need the 'api' object and 'fs' polyfill
+        const hasApi = !!currentApi;
+        const hasFs = typeof globalThis.fs !== 'undefined';
+
+        if (hasApi && hasFs) {
+            this.init(currentApi);
+        } else {
+            setTimeout(() => this.check(), 50);
+        }
     },
-    cwd: () => '.',
-    exit: (code) => {
-        console.log(`Process exit with code: ${code}`);
+
+    init: function (apiInstance) {
+        if (this.ready) return;
+
+        globalThis.api = apiInstance;
+        this.ready = true;
+
+        console.log("§a[Moud Polyfill] Bridge ready.");
+
+        while (this.queue.length > 0) {
+            const cb = this.queue.shift();
+            try { cb(); } catch (e) { console.error("[Moud Callback Error]", e); }
+        }
+    },
+
+    onReady: function (cb) {
+        if (this.ready) cb();
+        else this.queue.push(cb);
     }
 };
 
-// Custom require function to intercept Node.js module imports
-globalThis.require = function(moduleName) {
-    console.log(`Intercepting require() call for: ${moduleName}`);
-    
-    // Return the appropriate global polyfill
-    switch(moduleName) {
-        case 'crypto':
-            return globalThis.crypto;
-        case 'fs':
-            return globalThis.fs;
-        case 'path':
-            return globalThis.path;
-        case 'https':
-            return globalThis.https;
-        case 'http':
-            return globalThis.http;
-        case 'os':
-            return globalThis.os;
-        case 'util':
-            return globalThis.util;
-        case 'events':
-            return globalThis.events;
-        case 'stream':
-            return globalThis.stream;
-        case 'buffer':
-            return globalThis.buffer;
-        case 'child_process':
-            return globalThis.child_process;
-        case 'cluster':
-            return globalThis.cluster;
-        case 'dgram':
-            return globalThis.dgram;
-        case 'dns':
-            return globalThis.dns;
-        case 'net':
-            return globalThis.net;
-        case 'readline':
-            return globalThis.readline;
-        case 'repl':
-            return globalThis.repl;
-        case 'tls':
-            return globalThis.tls;
-        case 'url':
-            return globalThis.url;
-        case 'zlib':
-            return globalThis.zlib;
-        default:
-            console.warn(`Unknown module requested: ${moduleName}`);
-            return {};
+const waitForReady = (label) => {
+    if (!MoudBridge.ready) {
+        const start = Date.now();
+        // Busy wait should be minimized
+        while (!MoudBridge.ready && Date.now() - start < 2000) { }
     }
 };
 
-// Crypto polyfill using simple hash function
-globalThis.crypto = {
-    createHash: (algorithm) => ({
-        update: (data) => ({
-            digest: (encoding) => {
-                // Simple hash implementation for basic compatibility
-                const str = typeof data === 'string' ? data : String(data);
-                let hash = 0;
-                for (let i = 0; i < str.length; i++) {
-                    const char = str.charCodeAt(i);
-                    hash = ((hash << 5) - hash) + char;
-                    hash = hash & hash; // Convert to 32-bit integer
-                }
-                
-                if (encoding === 'hex') {
-                    return Math.abs(hash).toString(16).padStart(8, '0');
-                }
-                
-                // Return buffer-like object for other encodings
-                const buffer = new Array(32);
-                for (let i = 0; i < 32; i++) {
-                    buffer[i] = (hash >> (i * 8)) & 0xFF;
-                }
-                return {
-                    readInt32LE: (offset) => (buffer[offset] | (buffer[offset + 1] << 8) | (buffer[offset + 2] << 16) | (buffer[offset + 3] << 24)) >>> 0
+// --- 3. Patch FS ---
+const patchFs = () => {
+    if (typeof globalThis.fs !== 'undefined' && !globalThis.fs.__patched) {
+        const originalFs = globalThis.fs;
+        const methods = ['readFileSync', 'existsSync', 'mkdirSync', 'readdirSync', 'unlinkSync', 'statSync', 'writeFileSync'];
+
+        methods.forEach(method => {
+            const original = originalFs[method];
+            if (typeof original === 'function') {
+                originalFs[method] = function (...args) {
+                    waitForReady(`fs.${method}`);
+                    return original.apply(this, args);
                 };
             }
-        })
-    })
-};
+        });
 
-// FS polyfill using Moud's api.internal.fs
-// Note: This will only work when 'api' global is available (during runtime)
-globalThis.fs = {
-    existsSync: function(path) {
-        try {
-            // Check if Moud API is available
-            if (typeof api !== 'undefined' && api.internal && api.internal.fs) {
-                // Use Moud's filesystem API
-                api.internal.fs.stat(path);
-                return true;
-            }
-            
-            // If no Moud API, try Node.js fs
-            if (typeof require !== 'undefined') {
-                try {
-                    const fs = require('fs');
-                    return fs.existsSync(path);
-                } catch (e) {
-                    // Node.js fs not available either
-                }
-            }
-            
-            console.warn('Moud API not available, using fallback for fs.existsSync()');
-            return false; // Final fallback
-        } catch (error) {
-            console.warn('Error in fs.existsSync():', error);
-            return false;
-        }
-    },
-    
-    readFileSync: function(path, encoding) {
-        // Check if Moud API is available
-        if (typeof api !== 'undefined' && api.internal && api.internal.fs) {
-            return api.internal.fs.readFile(path, encoding || 'utf8');
-        }
-        
-        // If no Moud API, try Node.js fs
-        if (typeof require !== 'undefined') {
-            try {
-                const fs = require('fs');
-                return fs.readFileSync(path, encoding || 'utf8');
-            } catch (e) {
-                console.error('Fallback fs.readFileSync failed:', e);
-            }
-        }
-        
-        console.warn('Moud API not available, using fallback for fs.readFileSync()');
-        throw new Error('File system not available');
-    },
-    
-    writeFileSync: function(path, data, encoding) {
-        // Check if Moud API is available
-        if (typeof api !== 'undefined' && api.internal && api.internal.fs) {
-            return api.internal.fs.writeFile(path, data, encoding || 'utf8');
-        }
-        
-        // If no Moud API, try Node.js fs
-        if (typeof require !== 'undefined') {
-            try {
-                const fs = require('fs');
-                return fs.writeFileSync(path, data, encoding || 'utf8');
-            } catch (e) {
-                console.error('Fallback fs.writeFileSync failed:', e);
-            }
-        }
-        
-        console.warn('Moud API not available, using fallback for fs.writeFileSync()');
-        // No-op fallback
-    },
-    
-    mkdirSync: function(path, options) {
-        // Check if Moud API is available
-        if (typeof api !== 'undefined' && api.internal && api.internal.fs) {
-            return api.internal.fs.mkdir(path, options);
-        }
-        
-        // If no Moud API, try Node.js fs
-        if (typeof require !== 'undefined') {
-            try {
-                const fs = require('fs');
-                return fs.mkdirSync(path, options);
-            } catch (e) {
-                console.error('Fallback fs.mkdirSync failed:', e);
-            }
-        }
-        
-        console.warn('Moud API not available, using fallback for fs.mkdirSync()');
-        // No-op fallback
-    },
-    
-    readdirSync: function(path) {
-        // Check if Moud API is available
-        if (typeof api !== 'undefined' && api.internal && api.internal.fs) {
-            return api.internal.fs.readdir(path);
-        }
-        
-        // If no Moud API, try Node.js fs
-        if (typeof require !== 'undefined') {
-            try {
-                const fs = require('fs');
-                return fs.readdirSync(path);
-            } catch (e) {
-                console.error('Fallback fs.readdirSync failed:', e);
-            }
-        }
-        
-        console.warn('Moud API not available, using fallback for fs.readdirSync()');
-        return []; // Final fallback
-    },
-    
-    statSync: function(path) {
-        // Check if Moud API is available
-        if (typeof api !== 'undefined' && api.internal && api.internal.fs) {
-            return api.internal.fs.stat(path);
-        }
-        
-        // If no Moud API, try Node.js fs
-        if (typeof require !== 'undefined') {
-            try {
-                const fs = require('fs');
-                return fs.statSync(path);
-            } catch (e) {
-                console.error('Fallback fs.statSync failed:', e);
-            }
-        }
-        
-        console.warn('Moud API not available, using fallback for fs.statSync()');
-        return { isFile: () => false, isDirectory: () => false }; // Final fallback
-    },
-    
-    unlinkSync: function(path) {
-        // Check if Moud API is available
-        if (typeof api !== 'undefined' && api.internal && api.internal.fs) {
-            return api.internal.fs.unlink(path);
-        }
-        
-        // If no Moud API, try Node.js fs
-        if (typeof require !== 'undefined') {
-            try {
-                const fs = require('fs');
-                return fs.unlinkSync(path);
-            } catch (e) {
-                console.error('Fallback fs.unlinkSync failed:', e);
-            }
-        }
-        
-        console.warn('Moud API not available, using fallback for fs.unlinkSync()');
-        // No-op fallback
+        globalThis.fs.__patched = true;
+        console.log('[POLYFILL] Global fs patched.');
+        return true;
     }
+    return !!(globalThis.fs && globalThis.fs.__patched);
 };
 
-// Path polyfill (pure JavaScript, no API needed)
-globalThis.path = {
-    join: (...paths) => paths.join('/').replace(/\/+/g, '/'),
-    resolve: (...paths) => paths.join('/').replace(/\/+/g, '/'),
-    dirname: (path) => path.split('/').slice(0, -1).join('/'),
-    basename: (path) => path.split('/').pop(),
-    extname: (path) => {
-        const name = path.split('/').pop();
-        const dot = name.lastIndexOf('.');
-        return dot > 0 ? name.substring(dot) : '';
-    }
-};
+if (!patchFs()) {
+    const fsPoll = setInterval(() => {
+        if (patchFs()) clearInterval(fsPoll);
+    }, 10);
+}
 
-// HTTPS polyfill (minimal - would need Moud HTTP API if available)
-globalThis.https = {
-    get: (url, callback) => {
-        // Placeholder - would need actual implementation via Moud's HTTP APIs
-        console.warn('HTTPS requests not yet implemented in Moud polyfill');
-        if (callback) callback({ on: () => {} });
-        return { on: () => {} };
-    }
-};
+// --- 4. Globals ---
+globalThis.onMoudReady = (cb) => MoudBridge.onReady(cb);
+globalThis.moudApiReady = () => MoudBridge.ready;
 
-// Export empty objects for other modules (basic compatibility)
-globalThis.os = {
-    platform: () => 'minecraft',
-    arch: () => 'graaljs'
-};
-globalThis.util = {};
-globalThis.events = {};
-globalThis.stream = {};
-globalThis.buffer = {};
-globalThis.child_process = {};
-globalThis.cluster = {};
-globalThis.dgram = {};
-globalThis.dns = {};
-globalThis.http = {
-    get: globalThis.https.get
-};
-globalThis.net = {};
-globalThis.readline = {};
-globalThis.repl = {};
-globalThis.tls = {};
-globalThis.url = {
-    parse: (url) => ({ href: url, pathname: url })
-};
-globalThis.zlib = {};
-
-console.log('Moud API polyfills with custom require() loaded for GraalJS compatibility');
+MoudBridge.check();
+console.log('[POLYFILL] Polyfill initialization completed.');

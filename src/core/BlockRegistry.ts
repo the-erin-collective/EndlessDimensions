@@ -1,6 +1,5 @@
 /// <reference types="@epi-studio/moud-sdk" />
 import { Logger } from '../utils/Logger';
-import { getMoudFileSystem } from '../utils/MoudFileSystem';
 import * as path from 'path';
 import * as https from 'https';
 
@@ -17,25 +16,50 @@ export class BlockRegistry {
         this.allBlocks = [];
         this.blacklistedBlocks = new Set();
         this.safeBlocks = [];
-        // Note: loadBlockRegistry is now async and should be called after construction
+        // IMPORTANT: Do NOT initialize here - wait for initialize() to be called
+        this.logger.info('BlockRegistry constructor completed - waiting for initialize() to be called');
     }
 
     /**
-     * Initialize the block registry (must be called after construction)
+     * Initialize block registry (must be called after construction)
      */
     public async initialize(): Promise<void> {
-        await this.initializeBlacklist();
-        await this.loadBlockRegistry();
+        this.logger.info('Initializing BlockRegistry...');
+
+        return new Promise<void>((resolve, reject) => {
+            const onReady = () => {
+                try {
+                    console.log('[BlockRegistry] Moud API is ready! Initializing block data...');
+                    this.initializeBlacklist();
+                    this.loadBlockRegistry().then(() => resolve()).catch(reject);
+                } catch (error) {
+                    this.logger.error('Error during BlockRegistry initialization sequence:', error);
+                    reject(error);
+                }
+            };
+
+            if ((globalThis as any).onMoudReady) {
+                (globalThis as any).onMoudReady(onReady);
+            } else {
+                // Fallback polling if polyfill not present
+                const checkApi = () => {
+                    if (typeof (globalThis as any).api !== 'undefined' && typeof (globalThis as any).fs !== 'undefined') {
+                        onReady();
+                    } else {
+                        setTimeout(checkApi, 100);
+                    }
+                };
+                checkApi();
+            }
+        });
     }
 
     /**
      * Initialize the blacklist of blocks that should NOT be used as default blocks
      * Loads from external JSON file for better organization
      */
-    private async initializeBlacklist(): Promise<void> {
+    private initializeBlacklist(): void {
         try {
-            const moudFs = getMoudFileSystem();
-            
             // Try multiple possible paths for blacklist file
             const possiblePaths = [
                 path.join(process.cwd(), 'src', 'data', 'blockBlacklist.json'),
@@ -43,54 +67,56 @@ export class BlockRegistry {
                 path.join('.', 'src', 'data', 'blockBlacklist.json'),
                 './src/data/blockBlacklist.json'
             ];
-            
+
             let blacklistData = null;
             let usedPath = null;
-            
+
             for (const possiblePath of possiblePaths) {
                 try {
                     this.logger.debug(`Trying to load blacklist from: ${possiblePath}`);
-                    if (await moudFs.existsSync(possiblePath)) {
-                        const content = await moudFs.readFileSync(possiblePath, 'utf8');
-                        blacklistData = JSON.parse(content);
-                        usedPath = possiblePath;
-                        break;
+                    if ((globalThis as any).fs.existsSync(possiblePath)) {
+                        const content = (globalThis as any).fs.readFileSync(possiblePath, 'utf8');
+
+                        // Check if we got valid content (not empty fallback)
+                        if (content && content.trim() !== '') {
+                            blacklistData = JSON.parse(content);
+                            usedPath = possiblePath;
+                            break;
+                        } else {
+                            this.logger.warn(`Got empty content from ${possiblePath}, trying next path...`);
+                        }
                     }
                 } catch (pathError) {
+                    // Don't catch "Moud API not ready" errors - let them propagate
+                    if (pathError.message && pathError.message.includes('Moud API not ready')) {
+                        throw pathError;
+                    }
                     this.logger.debug(`Failed to load from ${possiblePath}: ${pathError}`);
                 }
             }
-            
-            if (!blacklistData) {
-                throw new Error('Could not find or read blockBlacklist.json from any location');
+
+            if (blacklistData) {
+                this.blacklistedBlocks = new Set(blacklistData.blacklistedBlocks || []);
+                this.safeBlocks = blacklistData.safeBlocks || [];
+                this.logger.info(`Loaded block blacklist from ${usedPath}`);
+                this.logger.info(`Blacklisted blocks: ${this.blacklistedBlocks.size}, Safe blocks: ${this.safeBlocks.length}`);
+            } else {
+                this.logger.warn('No blacklist file found, using fallback minimal blacklist');
+                // Use a minimal safe blacklist as fallback
+                this.blacklistedBlocks = new Set([
+                    'air', 'cave_air', 'void_air', 'water', 'lava', 'bedrock',
+                    'barrier', 'light', 'structure_void', 'moving_piston',
+                    'sticky_piston', 'piston_head', 'fire', 'soul_fire'
+                ]);
+                this.safeBlocks = ['stone', 'dirt', 'grass_block', 'oak_log', 'oak_planks'];
             }
-            
-            this.blacklistedBlocks = new Set();
-            
-            // Load all blocks from all categories
-            for (const category of Object.values(blacklistData.categories)) {
-                const categoryData = category as { blocks: string[] };
-                for (const block of categoryData.blocks) {
-                    this.blacklistedBlocks.add(block);
-                }
-            }
-            
-            this.logger.info(`Loaded blacklist with ${this.blacklistedBlocks.size} blocks from ${Object.keys(blacklistData.categories).length} categories using path: ${usedPath}`);
-            
         } catch (error) {
-            this.logger.error('Failed to load block blacklist from file, using fallback minimal blacklist', error);
-            
-            // Fallback to essential blacklisted blocks if file loading fails
+            this.logger.error('Failed to initialize block blacklist', error);
+            // Use minimal fallback
             this.blacklistedBlocks = new Set([
-                'minecraft:air',
-                'minecraft:void_air',
-                'minecraft:cave_air',
-                'minecraft:barrier',
-                'minecraft:structure_void',
-                'minecraft:light',
-                'minecraft:oak_leaves',
-                'minecraft:spruce_leaves',
-                'minecraft:birch_leaves',
+                'air', 'cave_air', 'void_air', 'water', 'lava', 'bedrock',
+                'barrier', 'light', 'structure_void', 'moving_piston',
+                'sticky_piston', 'piston_head', 'fire', 'soul_fire',
                 'minecraft:jungle_leaves',
                 'minecraft:acacia_leaves',
                 'minecraft:dark_oak_leaves',
@@ -99,6 +125,7 @@ export class BlockRegistry {
                 'minecraft:mangrove_leaves',
                 'minecraft:cherry_leaves'
             ]);
+            this.safeBlocks = ['stone', 'dirt', 'grass_block', 'oak_log', 'oak_planks'];
         }
     }
 
@@ -114,16 +141,16 @@ export class BlockRegistry {
             this.logger.error('Failed to fetch blocks from API', error);
             throw new Error(`Unable to load block registry: ${error}. The server requires internet access to fetch the latest Minecraft blocks.`);
         }
-        
+
         // Filter out blacklisted blocks - this is the original approach you preferred
         this.safeBlocks = this.allBlocks.filter(block => {
             return !this.blacklistedBlocks.has(block);
         });
-        
+
         this.logger.info(`Loaded ${this.allBlocks.length} total blocks`);
         this.logger.info(`Filtered to ${this.safeBlocks.length} safe blocks for dimension generation`);
         this.logger.info(`Blacklisted ${this.blacklistedBlocks.size} problematic blocks`);
-        
+
         if (this.safeBlocks.length === 0) {
             throw new Error('No safe blocks available after filtering. Check block blacklist configuration.');
         }
@@ -135,14 +162,14 @@ export class BlockRegistry {
     private async fetchBlocksFromAPI(): Promise<string[]> {
         return new Promise((resolve, reject) => {
             const url = 'http://minecraft-ids.grahamedgecombe.com/items.json';
-            
+
             https.get(url, (response) => {
                 let data = '';
-                
+
                 response.on('data', (chunk) => {
                     data += chunk;
                 });
-                
+
                 response.on('end', () => {
                     try {
                         const items = JSON.parse(data);
@@ -151,7 +178,7 @@ export class BlockRegistry {
                             .filter((item: any) => item.type < 256)
                             .map((item: any) => `minecraft:${item.text_type}`)
                             .filter((block: string, index: number, self: string[]) => self.indexOf(block) === index); // Remove duplicates
-                        
+
                         resolve(blocks);
                     } catch (error) {
                         reject(new Error(`Failed to parse API response: ${error}`));
@@ -173,7 +200,7 @@ export class BlockRegistry {
             this.logger.warn('No safe blocks available, falling back to stone');
             return 'minecraft:stone';
         }
-        
+
         const random = this.createSeededRandom(seed);
         const index = Math.floor(random() * this.safeBlocks.length);
         return this.safeBlocks[index];
@@ -189,7 +216,7 @@ export class BlockRegistry {
             this.logger.warn('No safe blocks available, falling back to stone');
             return 'minecraft:stone';
         }
-        
+
         const random = this.createSeededRandomBigInt(seed);
         const index = Math.floor(random() * this.safeBlocks.length);
         return this.safeBlocks[index];
@@ -204,12 +231,12 @@ export class BlockRegistry {
     public getRandomBlocks(seed: number, count: number): string[] {
         const blocks: string[] = [];
         const random = this.createSeededRandom(seed);
-        
+
         for (let i = 0; i < count; i++) {
             const index = Math.floor(random() * this.safeBlocks.length);
             blocks.push(this.safeBlocks[index]);
         }
-        
+
         return blocks;
     }
 
@@ -224,7 +251,7 @@ export class BlockRegistry {
             'minecraft:lava',
             'minecraft:milk' // if available
         ];
-        
+
         const random = this.createSeededRandom(seed);
         const index = Math.floor(random() * fluids.length);
         return fluids[index];

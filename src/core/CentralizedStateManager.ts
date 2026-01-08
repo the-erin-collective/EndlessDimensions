@@ -84,6 +84,24 @@ export class CentralizedStateManager {
    * Initialize the centralized state manager
    */
   public async initialize(): Promise<void> {
+    this.logger.info('Initializing CentralizedStateManager...');
+
+    // Wait for API to be fully ready
+    await new Promise<void>((resolve) => {
+      if ((globalThis as any).onMoudReady) {
+        (globalThis as any).onMoudReady(resolve);
+      } else {
+        const check = () => {
+          if (typeof (globalThis as any).api !== 'undefined' && (globalThis as any).api.internal) {
+            resolve();
+          } else {
+            setTimeout(check, 100);
+          }
+        };
+        check();
+      }
+    });
+
     try {
       // Subscribe to global state changes
       this.subscribeToGlobalState();
@@ -132,16 +150,19 @@ export class CentralizedStateManager {
    */
   private initializePlayerTracking(): void {
     try {
-      // Track player join/leave events if available
-      if ((this.api as any).events) {
-        (this.api as any).events.on('playerJoin', (player: any) => {
+      // Track player join/leave events
+      // Check both api.events and api.on (if api itself is the dispatcher)
+      const eventSource = (this.api as any).events || this.api;
+
+      if (typeof eventSource.on === 'function') {
+        eventSource.on('playerJoin', (player: any) => {
           this.handlePlayerJoin(player);
         });
 
-        (this.api as any).events.on('playerLeave', (player: any) => {
+        eventSource.on('playerLeave', (player: any) => {
           this.handlePlayerLeave(player);
         });
-        
+
         this.logger.debug('Player event tracking initialized');
       } else {
         this.logger.warn('API events not available - player tracking disabled');
@@ -163,11 +184,11 @@ export class CentralizedStateManager {
     try {
       if ((this.api as any).server && (this.api as any).server.getPlayers) {
         const players = (this.api as any).server.getPlayers();
-        
+
         for (const player of players) {
           this.handlePlayerJoin(player);
         }
-        
+
         this.logger.debug(`Initialized ${players.length} existing players`);
       } else {
         this.logger.warn('API server methods not available - existing player initialization skipped');
@@ -183,7 +204,7 @@ export class CentralizedStateManager {
   private handlePlayerJoin(player: any): void {
     try {
       const playerId = player.id || player.uuid || player.name;
-      
+
       const syncState: PlayerSyncState = {
         playerId,
         lastSyncTime: Date.now(),
@@ -210,7 +231,7 @@ export class CentralizedStateManager {
   private handlePlayerLeave(player: any): void {
     try {
       const playerId = player.id || player.uuid || player.name;
-      
+
       const syncState = this.playerSyncStates.get(playerId);
       if (syncState) {
         syncState.isOnline = false;
@@ -294,7 +315,7 @@ export class CentralizedStateManager {
       // Check for changes and additions
       for (const [key, newValue] of Object.entries(newState)) {
         const oldValue = oldState.get(key);
-        
+
         if (oldValue === undefined) {
           // Added
           deltas[key] = {
@@ -380,7 +401,7 @@ export class CentralizedStateManager {
       if (key.startsWith('proxyBlocks')) return 'proxy_blocks';
       if (key.startsWith('dimensions')) return 'dimensions';
       if (key.startsWith('portals')) return 'portals';
-      
+
       return 'general';
     } catch (error) {
       this.logger.error('Failed to get category from key:', error);
@@ -475,7 +496,7 @@ export class CentralizedStateManager {
 
       // Process changes
       const changesToProcess = this.changeQueue.splice(0, 10); // Process 10 at a time
-      
+
       for (const change of changesToProcess) {
         await this.processStateChange(change);
         this.statistics.pendingChanges--;
@@ -598,7 +619,7 @@ export class CentralizedStateManager {
    * Subscribe to state changes
    */
   public subscribe(
-    category: string, 
+    category: string,
     callback: (change: StateChange) => void,
     options: {
       id?: string;
@@ -608,7 +629,7 @@ export class CentralizedStateManager {
   ): string {
     try {
       const subscriberId = options.id || `sub_${Date.now()}_${Math.random()}`;
-      
+
       const subscriber: StateSubscriber = {
         id: subscriberId,
         category,
@@ -644,11 +665,11 @@ export class CentralizedStateManager {
           if (subscriber.id === subscriberId) {
             subscribers.delete(subscriber);
             this.statistics.activeSubscribers--;
-            
+
             if (subscribers.size === 0) {
               this.stateSubscribers.delete(category);
             }
-            
+
             this.logger.debug(`Unsubscribed ${subscriberId} from ${category}`);
             return;
           }
@@ -701,11 +722,11 @@ export class CentralizedStateManager {
   private updateStatistics(syncTime: number, changesProcessed: number): void {
     try {
       this.statistics.lastSyncTime = Date.now();
-      
+
       // Update average sync time
       const totalSyncs = this.statistics.successfulSyncs + this.statistics.failedSyncs;
       if (totalSyncs > 0) {
-        this.statistics.averageSyncTime = 
+        this.statistics.averageSyncTime =
           (this.statistics.averageSyncTime * (totalSyncs - 1) + syncTime) / totalSyncs;
       }
     } catch (error) {
@@ -775,7 +796,7 @@ export class CentralizedStateManager {
       this.changeQueue = [];
       this.syncInProgress = false;
       this.isInitialized = false;
-      
+
       this.logger.info('CentralizedStateManager shutdown complete');
     } catch (error) {
       this.logger.error('Error during CentralizedStateManager shutdown:', error);
@@ -805,7 +826,7 @@ export function getCentralizedStateManager(api?: MoudAPI): CentralizedStateManag
  * Convenience function to subscribe to state changes
  */
 export function subscribeToState(
-  category: string, 
+  category: string,
   callback: (change: StateChange) => void,
   options?: {
     id?: string;
