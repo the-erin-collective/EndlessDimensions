@@ -55,6 +55,23 @@ async function postBuild() {
         console.log('  ✓ Copied src directory');
     }
     
+    // Update launcher scripts to use correct project root
+    console.log('Updating launcher scripts...');
+    
+    // Update run.bat
+    const runBatPath = path.join(tempDir, 'run.bat');
+    let runBatContent = await fs.promises.readFile(runBatPath, 'utf8');
+    runBatContent = runBatContent.replace('--project-root .\\game', '--project-root .');
+    await fs.promises.writeFile(runBatPath, runBatContent);
+    
+    // Update run.sh
+    const runShPath = path.join(tempDir, 'run.sh');
+    let runShContent = await fs.promises.readFile(runShPath, 'utf8');
+    runShContent = runShContent.replace('--project-root ./game', '--project-root .');
+    await fs.promises.writeFile(runShPath, runShContent);
+    
+    console.log('  ✓ Updated launcher scripts');
+    
     // Re-create the ZIP
     console.log('Repackaging ZIP...');
     const newZip = new AdmZip();
