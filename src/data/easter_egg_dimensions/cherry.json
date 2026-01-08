@@ -1,0 +1,9 @@
+{
+  "name": "cherry",
+  "displayName": "Cherry Blossom Dimension",
+  "generatorType": "noise",
+  "defaultBlock": "minecraft:cherry_leaves",
+  "specialFeatures": ["pink_trees", "petal_rain", "sakura_groves"],
+  "createdAt": "2026-01-08T14:45:00.000Z",
+  "dimensionId": "endlessdimensions:cherry_123456789"
+}

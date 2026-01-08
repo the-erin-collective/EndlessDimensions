@@ -1,0 +1,9 @@
+{
+  "name": "ant",
+  "displayName": "Ant Dimension",
+  "generatorType": "floating_islands",
+  "defaultBlock": "minecraft:dirt",
+  "specialFeatures": ["giant_anthills", "tiny_caves", "ant_nests"],
+  "createdAt": "2026-01-08T14:45:00.000Z",
+  "dimensionId": "endlessdimensions:ant_123456789"
+}

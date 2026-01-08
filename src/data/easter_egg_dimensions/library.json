@@ -1,0 +1,9 @@
+{
+  "name": "library",
+  "displayName": "Library of Babel",
+  "generatorType": "void",
+  "defaultBlock": "minecraft:bookshelf",
+  "specialFeatures": ["endless_books", "labyrinth_corridors", "reading_rooms"],
+  "createdAt": "2026-01-08T14:45:00.000Z",
+  "dimensionId": "endlessdimensions:library_123456789"
+}
