@@ -1,4 +1,21 @@
-import { createHash } from 'crypto';
+// Simple hash function for browser compatibility
+function simpleHash(str: string): number[] {
+    let hash1 = 5381;
+    let hash2 = 52711;
+    for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash1 = ((hash1 << 5) + hash1) ^ char;
+        hash2 = ((hash2 << 5) + hash2) ^ char;
+    }
+    
+    // Convert to 32-byte array (256 bits)
+    const result = new Array(32);
+    const combined = (hash1 >>> 0) * 4096 + (hash2 >>> 0);
+    for (let i = 0; i < 32; i++) {
+        result[i] = (combined >> (i * 8)) & 0xFF;
+    }
+    return result;
+}
 
 export class HashEngine {
     private readonly salt: string = ' :why_so_salty#LazyCrypto ';
@@ -16,10 +33,10 @@ export class HashEngine {
      */
     public getDimensionSeed(text: string): number {
         const input = text + this.salt;
-        const hash = createHash('sha256').update(input).digest();
+        const hash = simpleHash(input);
         
         // Read first 4 bytes as a Little Endian Int
-        let seed = hash.readInt32LE(0);
+        let seed = (hash[0] | (hash[1] << 8) | (hash[2] << 16) | (hash[3] << 24)) >>> 0;
         return seed & 0x7FFFFFFF; // Force positive
     }
 
@@ -30,7 +47,7 @@ export class HashEngine {
      */
     public getDimensionSeedBigInt(text: string): bigint {
         const input = text + this.salt;
-        const hash = createHash('sha256').update(input).digest();
+        const hash = simpleHash(input);
         
         // Convert first 8 bytes to a BigInt (similar to Java's asLong() method)
         let result = 0n;

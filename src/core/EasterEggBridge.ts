@@ -4,7 +4,24 @@ import { SynthesizerGrid, BiomeColumn } from './VirtualGridController';
 import { DynamicRegistryInjector } from './DynamicRegistryInjector';
 import { BiomeJsonCompiler } from './BiomeJsonCompiler';
 import { EasterEggDimensionManager } from './EasterEggDimensionManager';
-import * as crypto from 'crypto';
+// Simple hash function for browser compatibility
+function simpleHash(str: string): number[] {
+    let hash1 = 5381;
+    let hash2 = 52711;
+    for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash1 = ((hash1 << 5) + hash1) ^ char;
+        hash2 = ((hash2 << 5) + hash2) ^ char;
+    }
+    
+    // Convert to 32-byte array (256 bits)
+    const result = new Array(32);
+    const combined = (hash1 >>> 0) * 4096 + (hash2 >>> 0);
+    for (let i = 0; i < 32; i++) {
+        result[i] = (combined >> (i * 8)) & 0xFF;
+    }
+    return result;
+}
 
 export interface EasterEggBridgeData {
     seedKey: string;
@@ -109,7 +126,8 @@ export class EasterEggBridge {
             }))
         };
 
-        const hash = crypto.createHash('md5').update(JSON.stringify(gridData)).digest('hex').substring(0, 8);
+        const hashBytes = simpleHash(JSON.stringify(gridData));
+        const hash = hashBytes.map(b => b.toString(16).padStart(2, '0')).join('').substring(0, 8);
         
         // Create human-readable seed key
         const groundBlockName = this.extractBlockName(unlockedColumns[0]?.groundBlock || 'stone');
