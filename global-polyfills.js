@@ -11,6 +11,10 @@ globalThis.process = {
     version: '1.0.0',
     versions: {
         node: '18.0.0'
+    },
+    cwd: () => '.',
+    exit: (code) => {
+        console.log(`Process exit with code: ${code}`);
     }
 };
 
@@ -107,8 +111,10 @@ globalThis.fs = {
                 api.internal.fs.stat(path);
                 return true;
             }
+            console.warn('Moud API not available, using fallback for fs.existsSync()');
             return false; // Fallback for when api is not available
         } catch (error) {
+            console.warn('Error in fs.existsSync():', error);
             return false;
         }
     },
@@ -117,42 +123,48 @@ globalThis.fs = {
         if (typeof api !== 'undefined' && api.internal && api.internal.fs) {
             return api.internal.fs.readFile(path, encoding || 'utf8');
         }
-        throw new Error('File system not available');
+        console.warn('Moud API not available, using fallback for fs.readFileSync()');
+        return ''; // Fallback
     },
     
     writeFileSync: function(path, data, encoding) {
         if (typeof api !== 'undefined' && api.internal && api.internal.fs) {
             return api.internal.fs.writeFile(path, data, encoding || 'utf8');
         }
-        throw new Error('File system not available');
+        console.warn('Moud API not available, using fallback for fs.writeFileSync()');
+        // No-op fallback
     },
     
     mkdirSync: function(path, options) {
         if (typeof api !== 'undefined' && api.internal && api.internal.fs) {
             return api.internal.fs.mkdir(path, options);
         }
-        throw new Error('File system not available');
+        console.warn('Moud API not available, using fallback for fs.mkdirSync()');
+        // No-op fallback
     },
     
     readdirSync: function(path) {
         if (typeof api !== 'undefined' && api.internal && api.internal.fs) {
             return api.internal.fs.readdir(path);
         }
-        throw new Error('File system not available');
+        console.warn('Moud API not available, using fallback for fs.readdirSync()');
+        return []; // Fallback
     },
     
     statSync: function(path) {
         if (typeof api !== 'undefined' && api.internal && api.internal.fs) {
             return api.internal.fs.stat(path);
         }
-        throw new Error('File system not available');
+        console.warn('Moud API not available, using fallback for fs.statSync()');
+        return { isFile: () => false, isDirectory: () => false }; // Fallback
     },
     
     unlinkSync: function(path) {
         if (typeof api !== 'undefined' && api.internal && api.internal.fs) {
             return api.internal.fs.unlink(path);
         }
-        throw new Error('File system not available');
+        console.warn('Moud API not available, using fallback for fs.unlinkSync()');
+        // No-op fallback
     }
 };
 
