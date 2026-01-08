@@ -74,7 +74,7 @@ async function postBuild() {
         console.log(`  ✓ Updated entry.js`);
     }
 
-    // Copy src directory to root (for transpiling TS on the fly if needed)
+    // Copy src directory to root
     const srcDir = path.join(projectRoot, 'src');
     if (fs.existsSync(srcDir)) {
         const destSrcDir = path.join(tempDir, 'src');
@@ -83,6 +83,33 @@ async function postBuild() {
         }
         await fs.promises.cp(srcDir, destSrcDir, { recursive: true });
         console.log('  ✓ Updated src directory in root');
+    }
+
+    // NEW: Copy libs directory to server folder and REMOVE libs folder
+    const libsDir = path.join(projectRoot, 'libs');
+    const tempLibsDir = path.join(tempDir, 'libs');
+
+    // First, remove the 'libs' directory if it exists in the temp build (added by moud pack)
+    if (fs.existsSync(tempLibsDir)) {
+        await fs.promises.rm(tempLibsDir, { recursive: true, force: true });
+        console.log('  ✓ Removed default libs directory from package');
+    }
+
+    if (fs.existsSync(libsDir)) {
+        const destServerDir = path.join(tempDir, 'server');
+        if (!fs.existsSync(destServerDir)) {
+            await fs.promises.mkdir(destServerDir, { recursive: true });
+        }
+
+        const libsFiles = await fs.promises.readdir(libsDir);
+        for (const file of libsFiles) {
+            if (file.endsWith('.jar')) {
+                const srcPath = path.join(libsDir, file);
+                const destPath = path.join(destServerDir, file);
+                await fs.promises.copyFile(srcPath, destPath);
+                console.log(`  ✓ Included ${file} in server/`);
+            }
+        }
     }
 
     // Update launcher scripts to use current directory as project root

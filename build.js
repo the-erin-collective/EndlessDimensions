@@ -93,11 +93,11 @@ class Builder {
             );
         }
 
-        // Copy JAR libraries
+        // Copy JAR libraries to server folder
         if (fs.existsSync(path.join(__dirname, 'libs'))) {
             this.copyDirectory(
                 path.join(__dirname, 'libs'),
-                path.join(this.buildDir, 'libs')
+                path.join(this.buildDir, 'server')
             );
         }
     }

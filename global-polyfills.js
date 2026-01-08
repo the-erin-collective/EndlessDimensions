@@ -28,6 +28,7 @@ if (typeof globalThis.process === 'undefined') {
         nextTick: (cb) => setTimeout(cb, 0),
         version: 'v18.0.0'
     };
+    globalThis.__dirname = '.';
     console.log('[POLYFILL] process shim installed.');
 }
 
@@ -92,10 +93,27 @@ if (typeof globalThis.require === 'undefined' || typeof require === 'undefined')
         if (moduleName === 'fs') return globalThis.fs;
         if (moduleName === 'path') {
             return {
-                join: (...args) => args.filter(Boolean).map(a => String(a)).join('/').replace(/\/+/g, '/'),
+                join: (...args) => {
+                    const parts = args.filter(Boolean).map(a => String(a)).join('/').split(/\/+/);
+                    const resolved = [];
+                    for (const part of parts) {
+                        if (part === '..') resolved.pop();
+                        else if (part !== '.') resolved.push(part);
+                    }
+                    return resolved.join('/') || '.';
+                },
                 dirname: (p) => p.split('/').slice(0, -1).join('/') || '.',
                 basename: (p) => p.split('/').pop(),
-                resolve: (...args) => args.filter(Boolean).map(a => String(a)).join('/').replace(/\/+/g, '/'),
+                resolve: (...args) => {
+                    // Resolution in this context is similar to join for now
+                    const parts = args.filter(Boolean).map(a => String(a)).join('/').split(/\/+/);
+                    const resolved = [];
+                    for (const part of parts) {
+                        if (part === '..') resolved.pop();
+                        else if (part !== '.') resolved.push(part);
+                    }
+                    return resolved.join('/') || '.';
+                },
                 sep: '/'
             };
         }

@@ -63,10 +63,16 @@ export class BlockRegistry {
             // Try multiple possible paths for blacklist file
             const possiblePaths = [
                 path.join(process.cwd(), 'src', 'data', 'blockBlacklist.json'),
-                path.join(__dirname, '..', 'data', 'blockBlacklist.json'),
                 path.join('.', 'src', 'data', 'blockBlacklist.json'),
                 './src/data/blockBlacklist.json'
             ];
+
+            // Add __dirname based path only if it exists
+            try {
+                if (typeof __dirname !== 'undefined') {
+                    possiblePaths.push(path.join(__dirname, '..', 'data', 'blockBlacklist.json'));
+                }
+            } catch (e) { /* ignore */ }
 
             let blacklistData = null;
             let usedPath = null;

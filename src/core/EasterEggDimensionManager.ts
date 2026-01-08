@@ -70,10 +70,16 @@ export class EasterEggDimensionManager {
             // Try multiple possible paths for easter egg folder
             const possiblePaths = [
                 path.join(process.cwd(), 'src', 'data', 'easter_egg_dimensions'),
-                path.join(__dirname, '..', 'data', 'easter_egg_dimensions'),
                 path.join('.', 'src', 'data', 'easter_egg_dimensions'),
                 './src/data/easter_egg_dimensions'
             ];
+
+            // Add __dirname based path only if it exists
+            try {
+                if (typeof __dirname !== 'undefined') {
+                    possiblePaths.push(path.join(__dirname, '..', 'data', 'easter_egg_dimensions'));
+                }
+            } catch (e) { /* ignore */ }
 
             let folderCreated = false;
 
