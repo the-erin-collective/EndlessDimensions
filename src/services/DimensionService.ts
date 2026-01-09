@@ -31,10 +31,52 @@ export class DimensionService {
     }
 
     /**
-     * Setup Terra terrain generation for the default world
+     * Setup Terra terrain generation for default world using Terra bridge plugin
      */
     private async setupDefaultTerrain(): Promise<void> {
-        console.log('[DimensionService] Setting up default world terrain (Plains)...');
+        console.log('[DimensionService] Setting up default world terrain using Terra bridge plugin...');
+
+        try {
+            // Check if Terra bridge plugin is available
+            if (typeof (globalThis as any).Terra !== 'undefined') {
+                console.log('[DimensionService] Terra bridge plugin detected! Using Terra API...');
+
+                // Use Terra bridge plugin for world generation
+                const defaultInstance = (this.api as any).world.getDefaultInstance();
+                if (defaultInstance) {
+                    console.log('[DimensionService] Found default instance, applying Terra generator...');
+
+                    // Create world using Terra bridge plugin
+                    const world = (globalThis as any).Terra.defaultPack()
+                        .seed(1234567890123456789n) // Use BigInt for large seeds
+                        .attach();
+
+                    console.log('[DimensionService] Terra world generated successfully:', world);
+
+                    // Enable Lighting
+                    this.enableLighting(defaultInstance);
+
+                    // Enable Fluids
+                    this.enableFluids(defaultInstance);
+                } else {
+                    console.warn('[DimensionService] Default instance not found.');
+                }
+            } else {
+                console.warn('[DimensionService] Terra bridge plugin not available. Falling back to manual Java interop...');
+
+                // Fallback to original Java interop method
+                await this.setupDefaultTerrainLegacy();
+            }
+        } catch (error) {
+            console.error('[DimensionService] Failed to setup terrain:', error);
+        }
+    }
+
+    /**
+     * Fallback method for legacy Terra setup using direct Java interop
+     */
+    private async setupDefaultTerrainLegacy(): Promise<void> {
+        console.log('[DimensionService] Using legacy Java interop for Terra setup...');
 
         const getJava = () => {
             const candidates = [
@@ -212,15 +254,30 @@ export class DimensionService {
 
         if (!java) return;
         try {
-            const TerraMinestomWorldBuilder = java.type('com.dfsek.terra.api.minestom.TerraMinestomWorldBuilder');
+            // Check if Terra bridge plugin is available first
+            if (typeof (globalThis as any).Terra !== 'undefined') {
+                console.log('[DimensionService] Using Terra bridge plugin for terrain generation...');
+                
+                // Use Terra bridge plugin for terrain generation
+                (globalThis as any).Terra.defaultPack()
+                    .seed(1234567890123456789n) // Use BigInt for large seeds
+                    .attach();
+                
+                console.log('[DimensionService] Terra terrain applied to instance via bridge plugin.');
+            } else {
+                console.log('[DimensionService] Terra bridge plugin not available, falling back to direct Java interop...');
+                
+                // Fallback to direct Java interop method
+                const TerraMinestomWorldBuilder = java.type('com.dfsek.terra.api.minestom.TerraMinestomWorldBuilder');
 
-            // For dynamic dimensions, we might want to use a specific pack 
-            // or the default one for now.
-            TerraMinestomWorldBuilder.from(instance)
-                .defaultPack()
-                .attach();
+                // For dynamic dimensions, we might want to use a specific pack 
+                // or to default one for now.
+                TerraMinestomWorldBuilder.from(instance)
+                    .defaultPack()
+                    .attach();
 
-            console.log(`[DimensionService] Terra terrain applied to instance.`);
+                console.log('[DimensionService] Terra terrain applied to instance via direct Java interop.');
+            }
         } catch (e) {
             console.error('[DimensionService] Failed to apply Terra:', e);
         }

@@ -16,11 +16,14 @@ import { LootService } from './services/LootService';
 
 // Import enhanced systems
 import { getCustomBlockRegistry } from './enhanced/CustomBlockRegistry';
-import { getBiomeGenerator } from './worldgen/BiomeGenerator';
+import { getBiomeGenerator } from './worldgen/biomeGenerator';
 import { getStructureGenerator } from './worldgen/StructureGenerator';
 import { getWorldFeatureIntegration } from './worldgen/WorldFeatureIntegration';
 import { getSoundSystem } from './enhanced/SoundSystem';
 import { getParticleSystem } from './enhanced/ParticleSystem';
+
+// Import Terra Bridge example
+import { demonstrateTerraBridge } from './examples/TerraBridgeExample';
 
 // Helper to log all available keys on the API object
 export const debugGlobalScope = () => {
@@ -269,6 +272,9 @@ api.on('server.load', async () => {
 
         // Step 6: Register event handlers
         portalHandler.registerEvents();
+
+        // Step 7: Demonstrate Terra Bridge Plugin usage
+        await demonstrateTerraBridge();
 
         console.log(`[MAIN] Endless Dimensions Mod v${MOD_VERSION} initialization complete!`);
     } catch (error) {
