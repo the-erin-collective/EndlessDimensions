@@ -93,6 +93,14 @@ class Builder {
             );
         }
 
+        // NEW: Copy data directory
+        if (fs.existsSync(path.join(__dirname, 'src', 'data'))) {
+            this.copyDirectory(
+                path.join(__dirname, 'src', 'data'),
+                path.join(this.buildDir, 'data')
+            );
+        }
+
         // Copy JAR libraries to server folder
         if (fs.existsSync(path.join(__dirname, 'libs'))) {
             this.copyDirectory(

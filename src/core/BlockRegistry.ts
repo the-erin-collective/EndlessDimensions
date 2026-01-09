@@ -60,61 +60,38 @@ export class BlockRegistry {
      */
     private initializeBlacklist(): void {
         try {
-            // Try multiple possible paths for blacklist file
-            const possiblePaths = [
-                path.join(process.cwd(), 'src', 'data', 'blockBlacklist.json'),
-                path.join('.', 'src', 'data', 'blockBlacklist.json'),
-                './src/data/blockBlacklist.json'
-            ];
-
-            // Add __dirname based path only if it exists
-            try {
-                if (typeof __dirname !== 'undefined') {
-                    possiblePaths.push(path.join(__dirname, '..', 'data', 'blockBlacklist.json'));
-                }
-            } catch (e) { /* ignore */ }
-
             let blacklistData = null;
             let usedPath = null;
 
-            for (const possiblePath of possiblePaths) {
+            // Try Engine Assets system
+            if ((this.api as any).assets && (this.api as any).assets.loadText) {
                 try {
-                    this.logger.debug(`Trying to load blacklist from: ${possiblePath}`);
-                    if ((globalThis as any).fs.existsSync(possiblePath)) {
-                        const content = (globalThis as any).fs.readFileSync(possiblePath, 'utf8');
-
-                        // Check if we got valid content (not empty fallback)
-                        if (content && content.trim() !== '') {
-                            blacklistData = JSON.parse(content);
-                            usedPath = possiblePath;
-                            break;
-                        } else {
-                            this.logger.warn(`Got empty content from ${possiblePath}, trying next path...`);
-                        }
+                    const assetPath = 'endlessdimensions:blockBlacklist.json';
+                    this.logger.debug(`Loading blacklist from Assets: ${assetPath}`);
+                    const content = (this.api as any).assets.loadText(assetPath);
+                    if (content) {
+                        blacklistData = JSON.parse(content);
+                        usedPath = `Asset:${assetPath}`;
                     }
-                } catch (pathError) {
-                    // Don't catch "Moud API not ready" errors - let them propagate
-                    if (pathError.message && pathError.message.includes('Moud API not ready')) {
-                        throw pathError;
-                    }
-                    this.logger.debug(`Failed to load from ${possiblePath}: ${pathError}`);
+                } catch (e) {
+                    this.logger.debug(`Failed to load blacklist asset: ${e}`);
                 }
             }
 
-            if (blacklistData) {
-                this.blacklistedBlocks = new Set(blacklistData.blacklistedBlocks || []);
-                this.safeBlocks = blacklistData.safeBlocks || [];
-                this.logger.info(`Loaded block blacklist from ${usedPath}`);
-                this.logger.info(`Blacklisted blocks: ${this.blacklistedBlocks.size}, Safe blocks: ${this.safeBlocks.length}`);
-            } else {
-                this.logger.warn('No blacklist file found, using fallback minimal blacklist');
-                // Use a minimal safe blacklist as fallback
+            // Fallback: Minimal hardcoded list if asset not found
+            if (!blacklistData) {
+                this.logger.warn('No blacklist asset found, using fallback minimal blacklist');
                 this.blacklistedBlocks = new Set([
                     'air', 'cave_air', 'void_air', 'water', 'lava', 'bedrock',
                     'barrier', 'light', 'structure_void', 'moving_piston',
                     'sticky_piston', 'piston_head', 'fire', 'soul_fire'
                 ]);
                 this.safeBlocks = ['stone', 'dirt', 'grass_block', 'oak_log', 'oak_planks'];
+            } else {
+                this.blacklistedBlocks = new Set(blacklistData.blacklistedBlocks || []);
+                this.safeBlocks = blacklistData.safeBlocks || [];
+                this.logger.info(`Loaded block blacklist from ${usedPath}`);
+                this.logger.info(`Blacklisted blocks: ${this.blacklistedBlocks.size}, Safe blocks: ${this.safeBlocks.length}`);
             }
         } catch (error) {
             this.logger.error('Failed to initialize block blacklist', error);

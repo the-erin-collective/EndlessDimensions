@@ -22,7 +22,7 @@ export class EasterEggDimensionManager {
     constructor(api: MoudAPI) {
         this.api = api;
         this.logger = new Logger('EasterEggDimensionManager');
-        this.easterEggFolderPath = path.join(process.cwd(), 'src', 'data', 'easter_egg_dimensions');
+        this.easterEggFolderPath = 'data/easter_egg_dimensions';
         this.savedDimensions = new Map();
         // Don't initialize here - wait for initialize() to be called
     }
@@ -67,42 +67,15 @@ export class EasterEggDimensionManager {
      */
     private createEasterEggFolder(): void {
         try {
-            // Try multiple possible paths for easter egg folder
-            const possiblePaths = [
-                path.join(process.cwd(), 'src', 'data', 'easter_egg_dimensions'),
-                path.join('.', 'src', 'data', 'easter_egg_dimensions'),
-                './src/data/easter_egg_dimensions'
-            ];
-
-            // Add __dirname based path only if it exists
+            const folderPath = 'data/easter_egg_dimensions';
             try {
-                if (typeof __dirname !== 'undefined') {
-                    possiblePaths.push(path.join(__dirname, '..', 'data', 'easter_egg_dimensions'));
+                if (!((globalThis as any).fs.existsSync(folderPath))) {
+                    (globalThis as any).fs.mkdirSync(folderPath, { recursive: true });
+                    this.logger.info(`Created easter egg dimensions folder: ${folderPath}`);
                 }
-            } catch (e) { /* ignore */ }
-
-            let folderCreated = false;
-
-            for (const possiblePath of possiblePaths) {
-                try {
-                    if (!((globalThis as any).fs.existsSync(possiblePath))) {
-                        (globalThis as any).fs.mkdirSync(possiblePath, { recursive: true });
-                        this.logger.info(`Created easter egg dimensions folder: ${possiblePath}`);
-                    }
-                    this.easterEggFolderPath = possiblePath;
-                    folderCreated = true;
-                    break;
-                } catch (pathError) {
-                    // Don't catch "Moud API not ready" errors - let them propagate
-                    if (pathError.message && pathError.message.includes('Moud API not ready')) {
-                        throw pathError;
-                    }
-                    this.logger.debug(`Failed to create folder at ${possiblePath}: ${pathError}`);
-                }
-            }
-
-            if (!folderCreated) {
-                throw new Error('Could not create easter egg dimensions folder at any location');
+                this.easterEggFolderPath = folderPath;
+            } catch (pathError) {
+                this.logger.debug(`Failed to create folder at ${folderPath}: ${pathError}`);
             }
         } catch (error) {
             this.logger.error('Failed to create easter egg dimensions folder', error);
@@ -114,69 +87,71 @@ export class EasterEggDimensionManager {
      */
     private doLoadSavedDimensions(): void {
         try {
-            if (!((globalThis as any).fs.existsSync(this.easterEggFolderPath))) {
-                return;
+            // First: Loaded defaults from Assets system
+            const defaults = ['ant', 'cherry', 'library'];
+            if ((this.api as any).assets && (this.api as any).assets.loadText) {
+                for (const name of defaults) {
+                    try {
+                        const assetPath = `endlessdimensions:easter_egg_dimensions/${name}.json`;
+                        const content = (this.api as any).assets.loadText(assetPath);
+                        if (content) {
+                            const dimension: SavedEasterEggDimension = JSON.parse(content);
+                            this.savedDimensions.set(name, dimension);
+                            this.logger.debug(`Loaded default easter egg dimension from Assets: ${name}`);
+                        }
+                    } catch (e) { }
+                }
             }
 
-            const files = (globalThis as any).fs.readdirSync(this.easterEggFolderPath);
-            for (const file of files) {
-                if (file.endsWith('.json')) {
-                    try {
-                        const filePath = path.join(this.easterEggFolderPath, file);
-                        const content = (globalThis as any).fs.readFileSync(filePath, 'utf8');
-                        const dimension: SavedEasterEggDimension = JSON.parse(content);
-                        const easterEggString = path.basename(file, '.json');
+            // Second: Load persisted dimensions from the data folder
+            if (((globalThis as any).fs.existsSync(this.easterEggFolderPath))) {
+                const files = (globalThis as any).fs.readdirSync(this.easterEggFolderPath);
+                for (const file of files) {
+                    if (file.endsWith('.json')) {
+                        try {
+                            const filePath = path.join(this.easterEggFolderPath, file);
+                            const content = (globalThis as any).fs.readFileSync(filePath, 'utf8');
+                            const dimension: SavedEasterEggDimension = JSON.parse(content);
+                            const easterEggString = path.basename(file, '.json');
 
-                        this.savedDimensions.set(easterEggString, dimension);
-                        this.logger.debug(`Loaded saved easter egg dimension: ${easterEggString}`);
-                    } catch (error) {
-                        // Don't catch "Moud API not ready" errors - let them propagate
-                        if (error.message && error.message.includes('Moud API not ready')) {
-                            throw error;
+                            // Don't overwrite assets-based defaults with disk versions unless they are actually different (or user customized)
+                            if (!this.savedDimensions.has(easterEggString)) {
+                                this.savedDimensions.set(easterEggString, dimension);
+                                this.logger.debug(`Loaded saved easter egg dimension from File: ${easterEggString}`);
+                            }
+                        } catch (error) {
+                            this.logger.error(`Failed to load easter egg dimension file: ${file}`, error);
                         }
-                        this.logger.error(`Failed to load easter egg dimension file: ${file}`, error);
                     }
                 }
             }
 
-            this.logger.info(`Loaded ${this.savedDimensions.size} saved easter egg dimensions`);
+            this.logger.info(`Loaded ${this.savedDimensions.size} total easter egg dimensions`);
         } catch (error) {
             this.logger.error('Failed to load saved easter egg dimensions', error);
         }
     }
 
-    /**
-     * Check if an easter egg dimension exists for the given string
-     * @param easterEggString The easter egg string to check
-     * @returns SavedEasterEggDimension if found, null otherwise
-     */
     public checkEasterEggDimension(easterEggString: string): SavedEasterEggDimension | null {
         return this.savedDimensions.get(easterEggString.toLowerCase()) || null;
     }
 
-    /**
-     * Get all saved easter egg dimensions
-     * @returns Map of all saved easter egg dimensions
-     */
     public getAllSavedDimensions(): Map<string, SavedEasterEggDimension> {
         return new Map(this.savedDimensions);
     }
 
-    /**
-     * Delete a saved easter egg dimension
-     * @param easterEggString The easter egg string to delete
-     * @returns True if deleted, false if not found
-     */
     public deleteSavedDimension(easterEggString: string): void {
-        // Execute immediately since initialize() already ensured API is ready
         this.doDeleteSavedDimension(easterEggString);
     }
 
-    /**
-     * Actually delete dimension (called when API is ready)
-     */
     private doDeleteSavedDimension(easterEggString: string): boolean {
         try {
+            // Can't delete asset-based dimensions
+            const defaults = ['ant', 'cherry', 'library'];
+            if (defaults.includes(easterEggString.toLowerCase())) {
+                return false;
+            }
+
             const filePath = path.join(this.easterEggFolderPath, `${easterEggString}.json`);
 
             if ((globalThis as any).fs.existsSync(filePath)) {
@@ -188,19 +163,11 @@ export class EasterEggDimensionManager {
 
             return false;
         } catch (error) {
-            // Don't catch "Moud API not ready" errors - let them propagate
-            if (error.message && error.message.includes('Moud API not ready')) {
-                throw error;
-            }
             this.logger.error(`Failed to delete saved easter egg dimension: ${easterEggString}`, error);
             return false;
         }
     }
 
-    /**
-     * Get statistics about saved easter egg dimensions
-     * @returns Statistics object
-     */
     public getStatistics(): { totalDimensions: number; folderPath: string; dimensions: string[] } {
         return {
             totalDimensions: this.savedDimensions.size,
@@ -209,17 +176,10 @@ export class EasterEggDimensionManager {
         };
     }
 
-    /**
-     * Reload saved dimensions from disk
-     */
     public reloadFromDisk(): void {
-        // Execute immediately since initialize() already ensured API is ready
         this.doReloadFromDisk();
     }
 
-    /**
-     * Actually reload from disk (called when API is ready)
-     */
     private doReloadFromDisk(): void {
         this.savedDimensions.clear();
         this.doLoadSavedDimensions();

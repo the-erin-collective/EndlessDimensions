@@ -83,6 +83,19 @@ async function postBuild() {
         }
         await fs.promises.cp(srcDir, destSrcDir, { recursive: true });
         console.log('  ✓ Updated src directory in root');
+
+        // Ensure data folder is also at the root (some paths depend on this)
+        const dataDir = path.join(srcDir, 'data');
+        if (fs.existsSync(dataDir)) {
+            const destDataDir = path.join(tempDir, 'data');
+            if (fs.existsSync(destDataDir)) {
+                // Merge if exists
+                await fs.promises.cp(dataDir, destDataDir, { recursive: true });
+            } else {
+                await fs.promises.cp(dataDir, destDataDir, { recursive: true });
+            }
+            console.log('  ✓ Updated data directory in root');
+        }
     }
 
     // NEW: Copy libs directory to server folder and REMOVE libs folder

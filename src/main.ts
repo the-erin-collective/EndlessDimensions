@@ -24,25 +24,79 @@ import { getParticleSystem } from './enhanced/ParticleSystem';
 
 // Helper to log all available keys on the API object
 function logDetailedApi(obj: any, label: string = 'api'): void {
-    try {
-        if (!obj) {
-            console.log(`[MAIN] ${label} is null or undefined`);
-            return;
-        }
-        const keys = Object.keys(obj);
-        console.log(`[MAIN] ${label} keys: ${keys.join(', ')}`);
+    if (!obj) {
+        console.log(`[MAIN] ${label} is null or undefined`);
+        return;
+    }
 
-        // Log types of critical keys to verify they are ready
-        const critical = ['server', 'world', 'commands', 'async', 'assets'];
-        critical.forEach(key => {
-            console.log(`[MAIN] api.${key} type: ${typeof obj[key]}`);
+    try {
+        // --- NUCLEAR DISCOVERY ---
+        console.log('[MAIN] --- NUCLEAR DISCOVERY START (v4) ---');
+
+        // 1. Asset Path battery (Simplified)
+        const testPaths = [
+            'endlessdimensions:blockBlacklist.json',
+            'endlessdimensions:easter_egg_dimensions/ant.json'
+        ];
+
+        console.log(`[MAIN] Testing ${testPaths.length} primary asset paths...`);
+        testPaths.forEach(p => {
+            try {
+                const data = (globalThis as any).Moud.assets.loadText(p);
+                console.log(`[MAIN] ASSET SUCCESS: "${p}" -> (length: ${data.length})`);
+            } catch (e: any) {
+                console.log(`[MAIN] ASSET FAIL: "${p}" -> ${e.message || e}`);
+            }
         });
 
-        if (obj.internal) {
-            console.log(`[MAIN] api.internal found (non-enumerable or dynamic)`);
-        }
+        // 2. Reflective Probing
+        const visited = new Set();
+        const probe = (target: any, path: string, depth: number) => {
+            if (depth > 4 || !target || (typeof target !== 'object' && typeof target !== 'function') || visited.has(target)) return;
+            visited.add(target);
+
+            try {
+                const keys = Reflect.ownKeys(target);
+                keys.forEach(k => {
+                    try {
+                        const keyStr = String(k);
+                        const val = target[k];
+                        const type = typeof val;
+                        const toString = Object.prototype.toString.call(val);
+
+                        // Java Detection (Improved)
+                        const isJava = toString.includes('Java') || toString.includes('Host') || (val && val.getClass);
+                        if (isJava) {
+                            console.log(`[MAIN] JAVA DETECTED: ${path}.${keyStr} (${toString})`);
+                            if (val.getClass) {
+                                try {
+                                    console.log(`[MAIN] Java Class: ${val.getClass().getName()}`);
+                                } catch (e) { }
+                            }
+                        }
+
+                        // Log target keys
+                        const lowerK = keyStr.toLowerCase();
+                        if (lowerK.includes('internal') || lowerK.includes('state') || lowerK.includes('polyglot') || lowerK.includes('bridge')) {
+                            console.log(`[MAIN] INTERESTING KEY: ${path}.${keyStr} (type: ${type}, toString: ${toString})`);
+                        }
+
+                        if ((type === 'object' || type === 'function') && depth < 4) {
+                            probe(val, `${path}.${keyStr}`, depth + 1);
+                        }
+                    } catch (e) { }
+                });
+            } catch (e) { }
+        };
+
+        console.log('[MAIN] Probing Moud API...');
+        probe((globalThis as any).Moud, 'Moud', 0);
+        console.log('[MAIN] Probing globalThis...');
+        probe(globalThis, 'global', 0);
+
+        console.log('[MAIN] --- NUCLEAR DISCOVERY END ---');
     } catch (e) {
-        console.log(`[MAIN] Error during API introspection: ${e}`);
+        console.log(`[MAIN] Error during nuclear discovery v3: ${e}`);
     }
 }
 

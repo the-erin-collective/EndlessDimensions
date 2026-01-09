@@ -5,6 +5,24 @@
 
 console.log('[POLYFILL] Starting polyfill initialization...');
 
+// --- 0. Java Exposure ---
+console.log(`[POLYFILL] globalThis.fs type: ${typeof globalThis.fs}`);
+console.log(`[POLYFILL] Java type: ${typeof Java}`);
+console.log(`[POLYFILL] Graal type: ${typeof Graal}`);
+console.log(`[POLYFILL] Moud type: ${typeof Moud}`);
+console.log(`[POLYFILL] Polyglot type: ${typeof Polyglot}`);
+console.log(`[POLYFILL] java type: ${typeof java}`);
+console.log(`[POLYFILL] Packages type: ${typeof Packages}`);
+
+if (typeof Java !== 'undefined') {
+    console.log('[POLYFILL] Java global found, exposing to globalThis.');
+    globalThis.Java = Java;
+} else if (typeof Packages !== 'undefined') {
+    console.log('[POLYFILL] Java not found, but Packages is available.');
+} else {
+    console.log('[POLYFILL] Warning: Neither Java nor Packages found in global scope.');
+}
+
 // --- 1. Timer Fixes ---
 // Some GraalJS environments have setTimeout but missing clearTimeout/setInterval/clearInterval
 if (typeof globalThis.clearTimeout === 'undefined' && typeof setTimeout !== 'undefined') {
@@ -32,59 +50,36 @@ if (typeof globalThis.process === 'undefined') {
     console.log('[POLYFILL] process shim installed.');
 }
 
-// --- 3. fs shim ---
+// --- 3. fs shim (Minimal with Logging) ---
 if (typeof globalThis.fs === 'undefined') {
-    if (typeof Java !== 'undefined') {
-        console.log('[POLYFILL] globalThis.fs missing, installing Java-backed shim...');
-        try {
-            const Files = Java.type('java.nio.file.Files');
-            const Paths = Java.type('java.nio.file.Paths');
-            const StandardOpenOption = Java.type('java.nio.file.StandardOpenOption');
-
-            globalThis.fs = {
-                readFileSync: (path, encoding) => {
-                    const p = Paths.get(String(path));
-                    const bytes = Files.readAllBytes(p);
-                    return String(new (Java.type('java.lang.String'))(bytes, encoding || "UTF-8"));
-                },
-                existsSync: (path) => {
-                    try { return Files.exists(Paths.get(String(path))); } catch (e) { return false; }
-                },
-                mkdirSync: (path, options) => {
-                    Files.createDirectories(Paths.get(String(path)));
-                },
-                readdirSync: (path) => {
-                    const stream = Files.list(Paths.get(String(path)));
-                    const list = [];
-                    stream.forEach(p => list.push(String(p.getFileName())));
-                    return list;
-                },
-                writeFileSync: (path, data) => {
-                    Files.write(Paths.get(String(path)), new (Java.type('java.lang.String'))(data).getBytes(), [StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING]);
-                },
-                unlinkSync: (path) => {
-                    Files.delete(Paths.get(String(path)));
-                },
-                statSync: (path) => {
-                    const p = Paths.get(String(path));
-                    return { isDirectory: () => Files.isDirectory(p), size: 0 };
-                }
-            };
-        } catch (e) { console.error('[POLYFILL] Java fs failed:', e); }
-    }
-
-    // Ensure we ALWAYS have a basic fs object to prevent crashes
-    if (!globalThis.fs) {
-        globalThis.fs = {
-            readFileSync: () => { throw new Error('fs.readFileSync not supported'); },
-            existsSync: () => false,
-            mkdirSync: () => { },
-            readdirSync: () => [],
-            writeFileSync: () => { },
-            unlinkSync: () => { },
-            statSync: () => ({ isDirectory: () => false, size: 0 })
-        };
-    }
+    console.log('[POLYFILL] Installing minimal fs shim...');
+    globalThis.fs = {
+        existsSync: (p) => {
+            console.log(`[FS SHIM] existsSync("${p}") -> false`);
+            return false;
+        },
+        readFileSync: (p) => {
+            console.log(`[FS SHIM] readFileSync("${p}") -> FAIL`);
+            throw new Error('fs.readFileSync not supported');
+        },
+        mkdirSync: (p) => {
+            console.log(`[FS SHIM] mkdirSync("${p}")`);
+        },
+        readdirSync: (p) => {
+            console.log(`[FS SHIM] readdirSync("${p}") -> []`);
+            return [];
+        },
+        writeFileSync: (p, d) => {
+            console.log(`[FS SHIM] writeFileSync("${p}")`);
+        },
+        unlinkSync: (p) => {
+            console.log(`[FS SHIM] unlinkSync("${p}")`);
+        },
+        statSync: (p) => {
+            console.log(`[FS SHIM] statSync("${p}")`);
+            return { isDirectory: () => false, size: 0 };
+        }
+    };
 }
 
 // --- 4. require() shim ---
