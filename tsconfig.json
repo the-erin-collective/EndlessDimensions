@@ -62,6 +62,7 @@
     "src/main-packet.ts",
     "src/optimization/PerformanceOptimization.ts",
     "src/testing/IntegrationTesting.ts",
-    "src/ui/UserFeedback.ts"
+    "src/ui/UserFeedback.ts",
+    "src/bridges/**/examples/**/*"
   ]
 }
