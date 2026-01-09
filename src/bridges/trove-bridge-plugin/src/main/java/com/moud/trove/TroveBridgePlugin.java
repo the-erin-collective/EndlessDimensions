@@ -1,6 +1,8 @@
 package com.moud.trove;
 
 import endless.bridge.BridgeContext;
+import org.graalvm.polyglot.Context;
+import org.graalvm.polyglot.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

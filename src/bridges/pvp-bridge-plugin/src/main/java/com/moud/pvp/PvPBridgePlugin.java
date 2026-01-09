@@ -1,6 +1,8 @@
 package com.moud.pvp;
 
 import endless.bridge.BridgeContext;
+import org.graalvm.polyglot.Context;
+import org.graalvm.polyglot.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,13 +71,14 @@ public class PvPBridgePlugin {
     private void injectPvPFacade() {
         try {
             // Get the global event node and try to access GraalVM context
-            // In a real implementation, you would get the GraalVM context and inject the facade
-            // For now, we'll log that this would happen
-            logger.debug("PvP facade injection would happen here with proper GraalVM access");
+            // In a real implementation, you would get the GraalVM context and injects facade
+            // For now, we'll use the provided context object
             
-            // Example of what the injection would look like:
-            // Value bindings = graalContext.getBindings("js");
-            // bindings.putMember("PvP", pvpFacade);
+            // Inject PvP facade into global scope
+            Value bindings = graalContext.getBindings("js");
+            bindings.putMember("PvP", pvpFacade);
+            
+            logger.debug("PvP facade injected into global scope");
             
         } catch (Exception e) {
             logger.error("Failed to inject PvP facade into global scope", e);

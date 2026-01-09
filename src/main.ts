@@ -11,6 +11,7 @@ import { PortalHandler } from './events/PortalHandler';
 import { EasterEggDimensionManager } from './core/EasterEggDimensionManager';
 import { CentralizedStateManager } from './core/CentralizedStateManager';
 import { CustomBlockRegistry } from './core/CustomBlockRegistry';
+import { BridgePluginManager } from './services/BridgePluginManager';
 import { DimensionService } from './services/DimensionService';
 import { LootService } from './services/LootService';
 
@@ -182,19 +183,24 @@ api.on('server.load', async () => {
     logDetailedApi((globalThis as any).api);
 
     try {
-        // Step 1: Initialize Enhanced Systems
-        enhancedCustomBlockRegistry = getCustomBlockRegistry();
-        biomeGenerator = getBiomeGenerator();
-        structureGenerator = getStructureGenerator();
-        worldFeatureIntegration = getWorldFeatureIntegration();
-        soundSystem = getSoundSystem();
-        particleSystem = getParticleSystem();
-        console.log('[MAIN] Enhanced Systems initialized');
+        // Step 1: Initialize enhanced systems
+        const customBlockRegistry = getCustomBlockRegistry();
+        const soundSystem = getSoundSystem();
+        const particleSystem = getParticleSystem();
+        const structureGenerator = getStructureGenerator();
+        const worldFeatureIntegration = getWorldFeatureIntegration();
 
-        // Step 2: Register custom blocks
-        customBlockRegistry = new CustomBlockRegistry(api);
-        customBlockRegistry.registerCustomBlocks();
-        console.log('[MAIN] Custom blocks registered');
+        // Initialize services
+        const dimensionService = new DimensionService(api);
+        const lootService = new LootService();
+
+        // Initialize services in parallel
+        await Promise.all([
+            dimensionService.initialize(),
+            lootService.initialize()
+        ]);
+
+        console.log('[MAIN] All services initialized successfully');
 
         // Step 3: Initialize core systems
         hashEngine = new HashEngine();
@@ -212,11 +218,8 @@ api.on('server.load', async () => {
         stateManager = new CentralizedStateManager(api);
         portalHandler = new PortalHandler(api, dimensionGenerator, hashEngine, easterEggManager);
 
-        // Step 4: Initialize Services
-        dimensionService = new DimensionService(api);
-        lootService = new LootService(api);
-
-        await dimensionService.initialize();
+        // Step 4: Initialize Services (already done above)
+        // dimensionService and lootService are already initialized
 
         // Initialize Combat (MinestomPvP)
         const getJava = () => {
@@ -266,8 +269,8 @@ api.on('server.load', async () => {
             }
         }
 
-        // Initialize Loot Service
-        lootService.initialize(); // Added
+        // Initialize Loot Service (already done above)
+        // lootService.initialize() is already called in the parallel initialization
 
         // Step 5: Initialize state manager
         console.log('[MAIN] Initializing state synchronization...');

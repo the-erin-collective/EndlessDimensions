@@ -1,11 +1,19 @@
 /// <reference types="@epi-studio/moud-sdk" />
 
+import { BridgePluginManager } from './BridgePluginManager';
+
+/**
+ * Dimension Service - handles dimension creation and terrain generation
+ * Uses the BridgePluginManager for proper plugin loading and coordination
+ */
 export class DimensionService {
     private api: MoudAPI;
+    private bridgeManager: BridgePluginManager;
     private isInitialized: boolean = false;
 
     constructor(api: MoudAPI) {
         this.api = api;
+        this.bridgeManager = new BridgePluginManager();
     }
 
     /**
@@ -14,58 +22,60 @@ export class DimensionService {
     public async initialize(): Promise<void> {
         if (this.isInitialized) return;
 
-        console.log('[DimensionService] Initializing...');
+        console.log('[DimensionService] Initializing with BridgePluginManager...');
 
-        try {
-            // Setup Terra for the default world
-            await this.setupDefaultTerrain();
+        // Initialize bridge plugin manager
+        await this.bridgeManager.waitForPlugins([
+            { name: 'Terra', globalName: 'Terra', check: () => typeof (globalThis as any).Terra !== 'undefined' },
+            { name: 'Polar', globalName: 'Polar', check: () => typeof (globalThis as any).Polar !== 'undefined' },
+            { name: 'Trove', globalName: 'Trove', check: () => typeof (globalThis as any).Trove !== 'undefined' },
+            { name: 'PvP', globalName: 'PvP', check: () => typeof (globalThis as any).PvP !== 'undefined' }
+        ]);
 
-            // Register for dynamic dimension creation events
-            this.registerEvents();
+        console.log('[DimensionService] BridgePluginManager initialized successfully');
 
-            this.isInitialized = true;
-            console.log('[DimensionService] Integration complete.');
-        } catch (error) {
-            console.error('[DimensionService] Failed to initialize:', error);
-        }
+        // Setup Terra for the default world
+        await this.setupDefaultTerrain();
+
+        // Register for dynamic dimension creation events
+        this.registerEvents();
+
+        this.isInitialized = true;
+        console.log('[DimensionService] Integration complete.');
     }
 
     /**
      * Setup Terra terrain generation for default world using Terra bridge plugin
      */
     private async setupDefaultTerrain(): Promise<void> {
-        console.log('[DimensionService] Setting up default world terrain using Terra bridge plugin...');
+        const terraPlugin = this.bridgeManager.getPlugin('Terra');
+        if (!terraPlugin) {
+            console.error('[DimensionService] Terra bridge plugin not available - this is a fatal error!');
+            throw new Error('Terra bridge plugin is required for terrain generation but was not found. Please ensure that Terra bridge plugin is properly loaded.');
+        }
+
+        console.log('[DimensionService] Using Terra bridge plugin for terrain generation...');
 
         try {
-            // Check if Terra bridge plugin is available
-            if (typeof (globalThis as any).Terra !== 'undefined') {
-                console.log('[DimensionService] Terra bridge plugin detected! Using Terra API...');
+            // Use Terra bridge plugin for world generation
+            const defaultInstance = (this.api as any).world.getDefaultInstance();
+            if (defaultInstance) {
+                console.log('[DimensionService] Found default instance, applying Terra generator...');
 
-                // Use Terra bridge plugin for world generation
-                const defaultInstance = (this.api as any).world.getDefaultInstance();
-                if (defaultInstance) {
-                    console.log('[DimensionService] Found default instance, applying Terra generator...');
+                // Create world using Terra bridge plugin
+                const world = (globalThis as any).Terra.defaultPack()
+                    .seed(1234567890123456789n) // Use BigInt for large seeds
+                    .attach();
 
-                    // Create world using Terra bridge plugin
-                    const world = (globalThis as any).Terra.defaultPack()
-                        .seed(1234567890123456789n) // Use BigInt for large seeds
-                        .attach();
+                console.log('[DimensionService] Terra world generated successfully:', world);
 
-                    console.log('[DimensionService] Terra world generated successfully:', world);
+                // Enable Lighting
+                this.enableLighting(defaultInstance);
 
-                    // Enable Lighting
-                    this.enableLighting(defaultInstance);
-
-                    // Enable Fluids
-                    this.enableFluids(defaultInstance);
-                } else {
-                    console.warn('[DimensionService] Default instance not found.');
-                }
+                // Enable Fluids
+                this.enableFluids(defaultInstance);
             } else {
-                console.warn('[DimensionService] Terra bridge plugin not available. Falling back to manual Java interop...');
-
-                // Fallback to original Java interop method
-                await this.setupDefaultTerrainLegacy();
+                console.warn('[DimensionService] Default instance not found.');
             }
         } catch (error) {
             console.error('[DimensionService] Failed to setup terrain:', error);
@@ -76,85 +86,26 @@ export class DimensionService {
      * Fallback method for legacy Terra setup using direct Java interop
      */
     private async setupDefaultTerrainLegacy(): Promise<void> {
-        console.log('[DimensionService] Using legacy Java interop for Terra setup...');
+        const polarPlugin = this.bridgeManager.getPlugin('Polar');
+        if (!polarPlugin) {
+            console.error('[DimensionService] Polar bridge plugin not available - this is a fatal error!');
+            throw new Error('Polar bridge plugin is required for world persistence but was not found. Please ensure that Polar bridge plugin is properly loaded.');
+        }
 
-        const getJava = () => {
-            const candidates = [
-                (globalThis as any).Java,
-                (globalThis as any).moud?.java,
-                (globalThis as any).moud?.native,
-                (this.api as any).internal?.java,
-                (globalThis as any).require ? (globalThis as any).require('native') : null,
-                (globalThis as any).require ? (globalThis as any).require('moud') : null
-            ];
+        console.log('[DimensionService] Using Polar bridge plugin for persistence...');
 
-            for (const c of candidates) {
-                if (!c) continue;
-                // Check for capability
-                const hasType = typeof c.type === 'function';
-                const hasGetClass = typeof c.getClass === 'function';
-                const hasGetNative = typeof c.getNativeClass === 'function';
+        // Create default instance for persistence
+        const defaultInstance = (this.api as any).world.getDefaultInstance();
+        if (defaultInstance) {
+            console.log('[DimensionService] Found default instance, applying hooks...');
 
-                if (hasType || hasGetClass || hasGetNative) {
-                    // Create a wrapper to ensure .type() exists
-                    return {
-                        ...c, // Try to spread properties (might not work for HostObjects, but safe for JS objects)
-                        type: (name: string) => {
-                            if (hasType) return c.type(name);
-                            if (hasGetClass) return c.getClass(name);
-                            if (hasGetNative) return c.getNativeClass(name);
-                            throw new Error('Java bridge capability lost');
-                        },
-                        // Preserve original reference just in case
-                        _raw: c
-                    };
-                }
-            }
-            return undefined;
-        };
-        const java = getJava();
-
-        if (typeof java !== 'undefined') {
-            try {
-                // Determine Terra and Polar Java classes
-                const TerraMinestomWorldBuilder = java.type('com.dfsek.terra.api.minestom.TerraMinestomWorldBuilder');
-                const PolarLoader = java.type('com.hollowcube.polar.PolarLoader');
-                const Paths = java.type('java.nio.file.Paths');
-
-                console.log('[DimensionService] Java environment detected. Ready for library hooks.');
-
-                // Assign generator to default world
-                const defaultInstance = (this.api as any).world.getDefaultInstance();
-                if (defaultInstance) {
-                    console.log('[DimensionService] Found default instance, applying hooks...');
-
-                    // Create Polar Loader for persistence first
-                    const polarPath = Paths.get("worlds/overworld.polar");
-                    const polarLoader = new PolarLoader(polarPath);
-                    defaultInstance.setChunkLoader(polarLoader);
-                    console.log('[DimensionService] Polar chunk loader applied.');
-
-                    // Create Terra Generator with default pack
-                    TerraMinestomWorldBuilder.from(defaultInstance)
-                        .defaultPack()
-                        .attach();
-
-                    console.log('[DimensionService] Terra terrain generator applied.');
-
-                    // Enable Lighting
-                    this.enableLighting(defaultInstance);
-
-                    // Enable Fluids
-                    this.enableFluids(defaultInstance);
-                } else {
-                    console.warn('[DimensionService] Default instance not found.');
-                }
-            } catch (e) {
-                console.error('[DimensionService] Java library integration failed:', e);
-                console.error(e.stack);
-            }
+            // Create Polar Loader for persistence first
+            const polarPath = "worlds/overworld.polar";
+            const polarPlugin = (globalThis as any).Polar.load(polarPath);
+            defaultInstance.setChunkLoader(polarPlugin);
+            console.log('[DimensionService] Polar chunk loader applied.');
         } else {
-            console.warn('[DimensionService] Java not found, skipping terrain hooks.');
+            console.warn('[DimensionService] Default instance not found.');
         }
     }
 
@@ -182,7 +133,7 @@ export class DimensionService {
         const defaultInstance = (this.api as any).world.getDefaultInstance();
         if (instance === defaultInstance) return;
 
-        console.log(`[DimensionService] New instance detected, applying vanilla hooks...`);
+        console.log(`[DimensionService] New instance detected, applying hooks...`);
 
         try {
             // Apply persistence
@@ -200,123 +151,71 @@ export class DimensionService {
         }
     }
 
+    /**
+     * Apply persistence to an instance
+     */
     private applyPersistence(instance: any): void {
-        // Check if Polar bridge plugin is available first
-        if (typeof (globalThis as any).Polar !== 'undefined') {
+        const polarPlugin = this.bridgeManager.getPlugin('Polar');
+        if (polarPlugin) {
             console.log('[DimensionService] Using Polar bridge plugin for persistence...');
-            
-            try {
-                // Generate a path based on instance ID or unique identifier
-                const id = instance.getUniqueId ? instance.getUniqueId() : Date.now().toString();
-                const dimensionId = `dimension_${id}`;
-                const polarFile = `${id}.polar`;
-                
-                // Load Polar world using bridge plugin
-                (globalThis as any).Polar.load(dimensionId, polarFile)
-                    .then(result => {
-                        if (result.isSuccess()) {
-                            console.log(`[DimensionService] Polar world loaded: ${dimensionId}`);
-                        } else {
-                            console.warn(`[DimensionService] Failed to load Polar world: ${result.getMessage()}`);
-                        }
-                    })
-                    .catch(error => {
-                        console.error('[DimensionService] Error loading Polar world:', error);
-                    });
-                
-                console.log(`[DimensionService] Polar persistence applied to instance: ${dimensionId}`);
-                
-            } catch (error) {
-                console.error('[DimensionService] Failed to apply Polar persistence:', error);
-            }
-            
+
+            // Generate a path based on instance ID or unique identifier
+            const id = instance.getUniqueId ? instance.getUniqueId() : Date.now().toString();
+            const dimensionId = `dimension_${id}`;
+            const polarFile = `${id}.polar`;
+
+            // Load Polar world using bridge plugin
+            (globalThis as any).Polar.load(dimensionId, polarFile)
+                .then(result => {
+                    if (result.isSuccess()) {
+                        console.log(`[DimensionService] Polar world loaded: ${dimensionId}`);
+                    } else {
+                        console.warn(`[DimensionService] Failed to load Polar world: ${result.getMessage()}`);
+                    }
+                })
+                .catch(error => {
+                    console.error('[DimensionService] Error loading Polar world:', error);
+                });
+
+            console.log(`[DimensionService] Polar persistence applied to instance: ${dimensionId}`);
         } else {
-            console.log('[DimensionService] Polar bridge plugin not available, falling back to direct Java interop...');
-            
-            // Fallback to direct Java interop method
-            const getJava = () => {
-                const candidates = [
-                    (globalThis as any).Java,
-                    (globalThis as any).moud?.java,
-                    (globalThis as any).moud?.native,
-                    (this.api as any).internal?.java,
-                    (globalThis as any).require ? (globalThis as any).require('native') : null,
-                    (globalThis as any).require ? (globalThis as any).require('moud') : null
-                ];
-                for (const c of candidates) {
-                    if (c && (typeof c.type === 'function' || typeof c.getClass === 'function' || typeof c.getNativeClass === 'function')) return c;
-                }
-                return undefined;
-            };
-            const java = getJava();
-
-            if (!java) return;
-            try {
-                const PolarLoader = java.type('com.hollowcube.polar.PolarLoader');
-                const Paths = java.type('java.nio.file.Paths');
-
-                // Generate a path based on instance ID or unique identifier
-                // For now, using a simple naming convention
-                const id = instance.getUniqueId ? instance.getUniqueId() : Date.now().toString();
-                const polarPath = Paths.get(`worlds/${id}.polar`);
-
-                const polarLoader = new PolarLoader(polarPath);
-                instance.setChunkLoader(polarLoader);
-                console.log(`[DimensionService] Polar persistence applied to instance.`);
-            } catch (e) {
-                console.error('[DimensionService] Failed to apply Polar:', e);
-            }
+            console.warn('[DimensionService] Polar bridge plugin not available, skipping persistence.');
         }
     }
 
+    /**
+     * Apply terrain generation to an instance
+     */
     private applyTerrain(instance: any): void {
-        const getJava = () => {
-            const candidates = [
-                (globalThis as any).Java,
-                (globalThis as any).moud?.java,
-                (globalThis as any).moud?.native,
-                (this.api as any).internal?.java,
-                (globalThis as any).require ? (globalThis as any).require('native') : null,
-                (globalThis as any).require ? (globalThis as any).require('moud') : null
-            ];
-            for (const c of candidates) {
-                if (c && (typeof c.type === 'function' || typeof c.getClass === 'function' || typeof c.getNativeClass === 'function')) return c;
-            }
-            return undefined;
-        };
-        const java = getJava();
+        const terraPlugin = this.bridgeManager.getPlugin('Terra');
+        if (terraPlugin) {
+            console.log('[DimensionService] Using Terra bridge plugin for terrain generation...');
 
-        if (!java) return;
-        try {
-            // Check if Terra bridge plugin is available first
-            if (typeof (globalThis as any).Terra !== 'undefined') {
-                console.log('[DimensionService] Using Terra bridge plugin for terrain generation...');
-                
-                // Use Terra bridge plugin for terrain generation
-                (globalThis as any).Terra.defaultPack()
+            try {
+                // Use Terra bridge plugin for world generation
+                const world = (globalThis as any).Terra.defaultPack()
                     .seed(1234567890123456789n) // Use BigInt for large seeds
                     .attach();
-                
-                console.log('[DimensionService] Terra terrain applied to instance via bridge plugin.');
-            } else {
-                console.log('[DimensionService] Terra bridge plugin not available, falling back to direct Java interop...');
-                
-                // Fallback to direct Java interop method
-                const TerraMinestomWorldBuilder = java.type('com.dfsek.terra.api.minestom.TerraMinestomWorldBuilder');
 
-                // For dynamic dimensions, we might want to use a specific pack 
-                // or to default one for now.
-                TerraMinestomWorldBuilder.from(instance)
-                    .defaultPack()
-                    .attach();
+                console.log('[DimensionService] Terra world generated successfully:', world);
 
-                console.log('[DimensionService] Terra terrain applied to instance via direct Java interop.');
+                // Enable Lighting
+                this.enableLighting(instance);
+
+                // Enable Fluids
+                this.enableFluids(instance);
+            } catch (error) {
+                console.error('[DimensionService] Failed to apply terrain:', error);
             }
-        } catch (e) {
-            console.error('[DimensionService] Failed to apply Terra:', e);
+        } else {
+            console.error('[DimensionService] Terra bridge plugin not available - this is a fatal error!');
+            throw new Error('Terra bridge plugin is required for terrain generation but was not found. Please ensure that Terra bridge plugin is properly loaded.');
         }
     }
 
+    /**
+     * Apply environment features to an instance
+     */
     private enableLighting(instance: any): void {
         const getJava = () => {
             const candidates = [
@@ -327,14 +226,15 @@ export class DimensionService {
                 (globalThis as any).require ? (globalThis as any).require('native') : null,
                 (globalThis as any).require ? (globalThis as any).require('moud') : null
             ];
+
             for (const c of candidates) {
                 if (c && (typeof c.type === 'function' || typeof c.getClass === 'function' || typeof c.getNativeClass === 'function')) return c;
             }
             return undefined;
         };
         const java = getJava();
-
         if (!java) return;
+
         try {
             const LightEngine = java.type('dev.aprilthepink.light.LightEngine');
             LightEngine.enableBlockLight(instance);
@@ -345,6 +245,9 @@ export class DimensionService {
         }
     }
 
+    /**
+     * Apply fluid physics to an instance
+     */
     private enableFluids(instance: any): void {
         const getJava = () => {
             const candidates = [
