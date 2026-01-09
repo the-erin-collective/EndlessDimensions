@@ -1,0 +1,155 @@
+package com.moud.trove;
+
+import endless.bridge.*;
+import net.minestom.server.instance.InstanceContainer;
+import org.slf4j.Logger;
+
+/**
+ * Trove bridge implementation that adheres to the new bridge contracts.
+ * Implements InstanceAttachableBridge, DimensionScopedBridge, and ReloadableBridge.
+ * Integrates the GoldenStack Trove loot system into the Moud environment.
+ */
+public class TroveBridge implements InstanceAttachableBridge, DimensionScopedBridge, ReloadableBridge {
+
+    private static final String TROVE_ATTACHED_TAG = "trove_attached";
+    private BridgeContext context;
+    private TroveLootTableRegistry registry;
+    private LootListener lootListener;
+    private boolean initialized = false;
+
+    @Override
+    public String getName() {
+        return "trove";
+    }
+
+    @Override
+    public void initialize(BridgeContext context) {
+        this.context = context;
+        
+        try {
+            // Initialize Trove components
+            registry = new TroveLootTableRegistry();
+            lootListener = new LootListener(registry, context.logger());
+            
+            // Load loot tables from assets
+            registry.load(context.assetsRoot().resolve("endless/loot_tables"));
+            
+            // Inject Trove facade into global scope for compatibility
+            injectIntoGlobalScope();
+            
+            initialized = true;
+            context.logger().info("Trove bridge initialized successfully");
+            
+        } catch (Exception e) {
+            context.logger().error("Failed to initialize Trove bridge", e);
+            throw new RuntimeException("Trove bridge initialization failed", e);
+        }
+    }
+
+    @Override
+    public boolean supports(DimensionConfig config) {
+        // Trove only activates for dimensions that have a loot table configured
+        return config.hasLootTable();
+    }
+
+    @Override
+    public void attachToInstance(InstanceContainer instance, DimensionConfig config) {
+        if (!initialized) {
+            context.logger().warn("Trove bridge not initialized, cannot attach to instance");
+            return;
+        }
+
+        // Guard against double attachment
+        if (instance.hasTag(TROVE_ATTACHED_TAG)) {
+            context.logger().debug("Trove already attached to instance {}", instance.getUniqueId());
+            return;
+        }
+
+        try {
+            // Mark as attached
+            instance.setTag(TROVE_ATTACHED_TAG, true);
+            
+            // Attach loot listener to the instance's event node
+            lootListener.attachToInstance(instance, config);
+            
+            context.logger().info("Trove bridge attached to instance {} with loot table: {}", 
+                                instance.getUniqueId(), config.lootTable());
+            
+        } catch (Exception e) {
+            context.logger().error("Failed to attach Trove bridge to instance {}", instance.getUniqueId(), e);
+            // Remove tag on failure
+            instance.removeTag(TROVE_ATTACHED_TAG);
+        }
+    }
+
+    @Override
+    public void reload() {
+        if (!initialized) {
+            context.logger().warn("Trove bridge not initialized, cannot reload");
+            return;
+        }
+
+        try {
+            // Reload loot tables atomically
+            registry.reload(context.assetsRoot().resolve("endless/loot_tables"));
+            context.logger().info("Trove bridge reloaded successfully");
+            
+        } catch (Exception e) {
+            context.logger().error("Failed to reload Trove bridge", e);
+        }
+    }
+
+    @Override
+    public void shutdown() {
+        try {
+            if (initialized) {
+                context.logger().info("Trove bridge shutdown complete");
+                initialized = false;
+            }
+        } catch (Exception e) {
+            context.logger().error("Error during Trove bridge shutdown", e);
+        }
+    }
+
+    /**
+     * Inject Trove facade into the global JavaScript scope for compatibility
+     */
+    private void injectIntoGlobalScope() {
+        try {
+            // Get the global event node and try to access GraalVM context
+            // This is a simplified approach - in practice, you'd need proper access to the GraalVM context
+            context.logger().debug("Trove facade injection would happen here with proper GraalVM access");
+            
+        } catch (Exception e) {
+            context.logger().warn("Could not inject Trove facade into global scope", e);
+        }
+    }
+
+    /**
+     * Get the current Trove loot table registry
+     * @return TroveLootTableRegistry instance or null if not initialized
+     */
+    public TroveLootTableRegistry getRegistry() {
+        return registry;
+    }
+
+    /**
+     * Check if the bridge is initialized
+     * @return True if initialized
+     */
+    public boolean isInitialized() {
+        return initialized;
+    }
+
+    /**
+     * Get statistics about loaded loot tables
+     * @return Statistics string
+     */
+    public String getStatistics() {
+        if (!initialized) {
+            return "Trove bridge not initialized";
+        }
+        
+        return registry.getStatistics();
+    }
+}

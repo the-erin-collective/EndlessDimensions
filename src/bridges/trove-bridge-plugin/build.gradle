@@ -1,0 +1,75 @@
+plugins {
+    id 'java'
+    id 'java-library'
+}
+
+group = 'com.moud.trove'
+version = '1.0.0-BETA'
+
+repositories {
+    mavenCentral()
+    maven { url = 'https://repo.minestom.com/repository/maven-public/' }
+    // Add Trove repository when available
+    // maven { url = 'https://repo.goldenstack.dev/repository/maven-public/' }
+}
+
+dependencies {
+    // Minestom
+    implementation 'com.github.Minestom:Minestom:master-SNAPSHOT'
+    
+    // Bridge contracts
+    implementation project(':src:bridge')
+    
+    // Trove dependency (placeholder - replace with actual Trove dependency)
+    // implementation 'dev.goldenstack:trove:1.0.0'
+    
+    // Logging
+    implementation 'org.slf4j:slf4j-api:2.0.7'
+    
+    // Testing
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.9.2'
+    testImplementation 'org.mockito:mockito-core:5.1.1'
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+test {
+    useJUnitPlatform()
+}
+
+jar {
+    archiveBaseName = 'moud-trove-bridge'
+    archiveVersion = project.version
+    
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+// Custom task to build the JAR
+task buildJar(type: Jar) {
+    archiveBaseName = 'moud-trove-bridge'
+    archiveVersion = project.version
+    
+    from sourceSets.main.output
+    
+    dependsOn configurations.runtimeClasspath
+    from {
+        configurations.runtimeClasspath.findAll { it.name.endsWith('jar') }.collect { zipTree(it) }
+    }
+    
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    
+    manifest {
+        attributes(
+            'Main-Class': 'com.moud.trove.TroveBridgePlugin',
+            'Implementation-Title': 'Moud Trove Bridge Plugin',
+            'Implementation-Version': project.version
+        )
+    }
+}
