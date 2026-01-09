@@ -15,6 +15,7 @@ public class TroveBridge implements InstanceAttachableBridge, DimensionScopedBri
     private BridgeContext context;
     private TroveLootTableRegistry registry;
     private LootListener lootListener;
+    private TroveFacade troveFacade;
     private boolean initialized = false;
 
     @Override
@@ -30,6 +31,7 @@ public class TroveBridge implements InstanceAttachableBridge, DimensionScopedBri
             // Initialize Trove components
             registry = new TroveLootTableRegistry();
             lootListener = new LootListener(registry, context.logger());
+            troveFacade = new TroveFacade(this);
             
             // Load loot tables from assets
             registry.load(context.assetsRoot().resolve("endless/loot_tables"));
@@ -117,8 +119,13 @@ public class TroveBridge implements InstanceAttachableBridge, DimensionScopedBri
     private void injectIntoGlobalScope() {
         try {
             // Get the global event node and try to access GraalVM context
-            // This is a simplified approach - in practice, you'd need proper access to the GraalVM context
+            // In a real implementation, you would get the GraalVM context and inject the facade
+            // For now, we'll log that this would happen
             context.logger().debug("Trove facade injection would happen here with proper GraalVM access");
+            
+            // Example of what the injection would look like:
+            // Value bindings = graalContext.getBindings("js");
+            // bindings.putMember("Trove", troveFacade);
             
         } catch (Exception e) {
             context.logger().warn("Could not inject Trove facade into global scope", e);
