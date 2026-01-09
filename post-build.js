@@ -120,7 +120,7 @@ async function postBuild() {
     }
 
     // NEW: Copy Terra bridge plugin Shadow JAR to plugins directory
-    const terraPluginDir = path.join(projectRoot, 'terra-bridge-plugin');
+    const terraPluginDir = path.join(projectRoot, 'src', 'bridges', 'terra-bridge-plugin');
     const terraBuildDir = path.join(terraPluginDir, 'build', 'libs');
     const destPluginsDir = path.join(tempDir, 'plugins');
 
@@ -139,11 +139,11 @@ async function postBuild() {
             }
         }
     } else {
-        console.log('  ⚠ Terra bridge plugin not built. Run: cd terra-bridge-plugin && ./gradlew shadowJar');
+        console.log('  ⚠ Terra bridge plugin not built. Run: cd src/bridges/terra-bridge-plugin && ./gradlew shadowJar');
     }
 
     // Copy Polar bridge plugin if built
-    const polarPluginPath = path.join(__dirname, 'polar-bridge-plugin', 'build', 'libs', 'moud-polar-bridge-1.0.0-BETA.jar');
+    const polarPluginPath = path.join(__dirname, 'src', 'bridges', 'polar-bridge-plugin', 'build', 'libs', 'moud-polar-bridge-1.0.0-BETA.jar');
     if (fs.existsSync(polarPluginPath)) {
         const pluginsDir = path.join(tempDir, 'plugins');
         if (!fs.existsSync(pluginsDir)) {
@@ -152,7 +152,7 @@ async function postBuild() {
         fs.copyFileSync(polarPluginPath, path.join(pluginsDir, 'moud-polar-bridge-1.0.0-BETA.jar'));
         console.log('  ✓ Included Polar bridge plugin moud-polar-bridge-1.0.0-BETA.jar in plugins/');
     } else {
-        console.log('  ⚠ Polar bridge plugin not built. Run: cd polar-bridge-plugin && ./gradlew shadowJar');
+        console.log('  ⚠ Polar bridge plugin not built. Run: cd src/bridges/polar-bridge-plugin && ./gradlew shadowJar');
     }
 
     // Update launcher scripts to use current directory as project root

@@ -20,7 +20,7 @@ This plugin enables developers to programmatically control data-driven terrain s
 
 1. Build the plugin:
 ```bash
-cd terra-bridge-plugin
+cd src/bridges/terra-bridge-plugin
 ./gradlew shadowJar
 ```
 
@@ -174,7 +174,7 @@ config/terra-packs/
 ### Project Structure
 
 ```
-terra-bridge-plugin/
+src/bridges/terra-bridge-plugin/
 ├── src/main/java/com/moud/terra/
 │   ├── TerraBridgePlugin.java      # Main plugin class
 │   ├── TerraFacade.java             # JavaScript API facade

@@ -47,4 +47,7 @@ config/
 /dist
 /libs
 /.moud
-/polar-bridge-plugin/.gradle
+/src/bridges/polar-bridge-plugin/.gradle
+/src/bridges/terra-bridge-plugin/.gradle
+/terra-bridge-plugin/.gradle
+/terra-bridge-plugin/.gradle

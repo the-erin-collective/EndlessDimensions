@@ -44,7 +44,7 @@ class Builder {
     async buildTerraPlugin() {
         console.log('🌍 Building Terra bridge plugin...');
         
-        const terraPluginDir = path.join(__dirname, 'terra-bridge-plugin');
+        const terraPluginDir = path.join(__dirname, 'src', 'bridges', 'terra-bridge-plugin');
         
         if (!fs.existsSync(terraPluginDir)) {
             console.log('  ⚠ Terra bridge plugin directory not found, skipping...');
@@ -72,14 +72,14 @@ class Builder {
             
         } catch (error) {
             console.warn('  ⚠ Terra bridge plugin build failed:', error.message);
-            console.log('  💡 Run manually: cd terra-bridge-plugin && ./gradlew shadowJar');
+            console.log('  💡 Run manually: cd src/bridges/terra-bridge-plugin && ./gradlew shadowJar');
         }
     }
 
     async buildPolarPlugin() {
         console.log('🧊 Building Polar bridge plugin...');
         
-        const polarPluginDir = path.join(__dirname, 'polar-bridge-plugin');
+        const polarPluginDir = path.join(__dirname, 'src', 'bridges', 'polar-bridge-plugin');
         
         if (!fs.existsSync(polarPluginDir)) {
             console.log('  ⚠ Polar bridge plugin directory not found, skipping...');
@@ -87,9 +87,17 @@ class Builder {
         }
         
         try {
+            // Check if Gradle wrapper exists
+            const gradlewWrapper = process.platform === 'win32' ? 'gradlew.bat' : './gradlew';
+            const gradlewPath = path.join(polarPluginDir, gradlewWrapper);
+            
+            if (!fs.existsSync(gradlewPath)) {
+                throw new Error(`Gradle wrapper not found at ${gradlewPath}`);
+            }
+            
             // Build the Polar bridge plugin using Gradle
             console.log('  📦 Building Polar bridge plugin with Gradle...');
-            execSync('./gradlew shadowJar', { cwd: polarPluginDir, stdio: 'inherit' });
+            execSync(gradlewWrapper + ' shadowJar', { cwd: polarPluginDir, stdio: 'inherit' });
             
             // Copy the built JAR to the plugins directory
             const polarJarPath = path.join(polarPluginDir, 'build', 'libs', 'moud-polar-bridge-1.0.0-BETA.jar');
@@ -189,7 +197,7 @@ class Builder {
         }
 
         // Copy Terra bridge plugin to plugins folder
-        const terraBuildDir = path.join(__dirname, 'terra-bridge-plugin', 'build', 'libs');
+        const terraBuildDir = path.join(__dirname, 'src', 'bridges', 'terra-bridge-plugin', 'build', 'libs');
         if (fs.existsSync(terraBuildDir)) {
             const pluginsDir = path.join(this.buildDir, 'plugins');
             fs.mkdirSync(pluginsDir, { recursive: true });

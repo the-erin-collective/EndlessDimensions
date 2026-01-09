@@ -19,7 +19,11 @@ repositories {
 
 dependencies {
     // Polar dependency - try a version compatible with Java 21
-    implementation 'dev.hollowcube:polar:1.14.0'
+    implementation 'dev.hollowcube:polar:1.14.6'
+    
+    // Force newer ASM version for Java 21 compatibility
+    implementation 'org.ow2.asm:asm:9.7'
+    implementation 'org.ow2.asm:asm-commons:9.7'
     
     // SLF4J logging - use version compatible with Java 21
     implementation 'org.slf4j:slf4j-api:1.7.36'
@@ -53,9 +57,9 @@ shadowJar {
     archiveClassifier.set('')
     archiveBaseName.set('moud-polar-bridge')
     
-    // Relocate dependencies to avoid conflicts
-    relocate 'dev.hollowcube.polar', 'com.moud.polar.libs.polar'
-    relocate 'org.slf4j', 'com.moud.polar.libs.slf4j'
+    // Relocate dependencies to avoid conflicts - DISABLED for now due to Java 21 ASM issues
+    // relocate 'dev.hollowcube.polar', 'com.moud.polar.libs.polar'
+    // relocate 'org.slf4j', 'com.moud.polar.libs.slf4j'
     
     // Exclude unnecessary files
     exclude 'META-INF/*.SF'
