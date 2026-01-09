@@ -55,6 +55,7 @@ async function postBuild() {
     const projectFiles = [
         'package.json',
         'moud.json',
+        'moud.toml',
         'global-polyfills.js',
         'run-moud.js'
     ];
@@ -98,29 +99,22 @@ async function postBuild() {
         }
     }
 
-    // NEW: Copy libs directory to server folder and REMOVE libs folder
+    // NEW: Copy libs directory to package mods folder (Moud 0.7.x scans /mods)
     const libsDir = path.join(projectRoot, 'libs');
-    const tempLibsDir = path.join(tempDir, 'libs');
-
-    // First, remove the 'libs' directory if it exists in the temp build (added by moud pack)
-    if (fs.existsSync(tempLibsDir)) {
-        await fs.promises.rm(tempLibsDir, { recursive: true, force: true });
-        console.log('  ✓ Removed default libs directory from package');
-    }
+    const destModsDir = path.join(tempDir, 'mods');
 
     if (fs.existsSync(libsDir)) {
-        const destServerDir = path.join(tempDir, 'server');
-        if (!fs.existsSync(destServerDir)) {
-            await fs.promises.mkdir(destServerDir, { recursive: true });
+        if (!fs.existsSync(destModsDir)) {
+            await fs.promises.mkdir(destModsDir, { recursive: true });
         }
 
         const libsFiles = await fs.promises.readdir(libsDir);
         for (const file of libsFiles) {
             if (file.endsWith('.jar')) {
                 const srcPath = path.join(libsDir, file);
-                const destPath = path.join(destServerDir, file);
+                const destPath = path.join(destModsDir, file);
                 await fs.promises.copyFile(srcPath, destPath);
-                console.log(`  ✓ Included ${file} in server/`);
+                console.log(`  ✓ Included ${file} in mods/`);
             }
         }
     }

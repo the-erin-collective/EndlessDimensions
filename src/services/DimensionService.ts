@@ -36,8 +36,42 @@ export class DimensionService {
     private async setupDefaultTerrain(): Promise<void> {
         console.log('[DimensionService] Setting up default world terrain (Plains)...');
 
-        // Use Java-backed Terra integration
-        const java = (globalThis as any).Java;
+        const getJava = () => {
+            const candidates = [
+                (globalThis as any).Java,
+                (globalThis as any).moud?.java,
+                (globalThis as any).moud?.native,
+                (this.api as any).internal?.java,
+                (globalThis as any).require ? (globalThis as any).require('native') : null,
+                (globalThis as any).require ? (globalThis as any).require('moud') : null
+            ];
+
+            for (const c of candidates) {
+                if (!c) continue;
+                // Check for capability
+                const hasType = typeof c.type === 'function';
+                const hasGetClass = typeof c.getClass === 'function';
+                const hasGetNative = typeof c.getNativeClass === 'function';
+
+                if (hasType || hasGetClass || hasGetNative) {
+                    // Create a wrapper to ensure .type() exists
+                    return {
+                        ...c, // Try to spread properties (might not work for HostObjects, but safe for JS objects)
+                        type: (name: string) => {
+                            if (hasType) return c.type(name);
+                            if (hasGetClass) return c.getClass(name);
+                            if (hasGetNative) return c.getNativeClass(name);
+                            throw new Error('Java bridge capability lost');
+                        },
+                        // Preserve original reference just in case
+                        _raw: c
+                    };
+                }
+            }
+            return undefined;
+        };
+        const java = getJava();
+
         if (typeof java !== 'undefined') {
             try {
                 // Determine Terra and Polar Java classes
@@ -125,7 +159,22 @@ export class DimensionService {
     }
 
     private applyPersistence(instance: any): void {
-        const java = (globalThis as any).Java;
+        const getJava = () => {
+            const candidates = [
+                (globalThis as any).Java,
+                (globalThis as any).moud?.java,
+                (globalThis as any).moud?.native,
+                (this.api as any).internal?.java,
+                (globalThis as any).require ? (globalThis as any).require('native') : null,
+                (globalThis as any).require ? (globalThis as any).require('moud') : null
+            ];
+            for (const c of candidates) {
+                if (c && (typeof c.type === 'function' || typeof c.getClass === 'function' || typeof c.getNativeClass === 'function')) return c;
+            }
+            return undefined;
+        };
+        const java = getJava();
+
         if (!java) return;
         try {
             const PolarLoader = java.type('com.hollowcube.polar.PolarLoader');
@@ -145,7 +194,22 @@ export class DimensionService {
     }
 
     private applyTerrain(instance: any): void {
-        const java = (globalThis as any).Java;
+        const getJava = () => {
+            const candidates = [
+                (globalThis as any).Java,
+                (globalThis as any).moud?.java,
+                (globalThis as any).moud?.native,
+                (this.api as any).internal?.java,
+                (globalThis as any).require ? (globalThis as any).require('native') : null,
+                (globalThis as any).require ? (globalThis as any).require('moud') : null
+            ];
+            for (const c of candidates) {
+                if (c && (typeof c.type === 'function' || typeof c.getClass === 'function' || typeof c.getNativeClass === 'function')) return c;
+            }
+            return undefined;
+        };
+        const java = getJava();
+
         if (!java) return;
         try {
             const TerraMinestomWorldBuilder = java.type('com.dfsek.terra.api.minestom.TerraMinestomWorldBuilder');
@@ -163,7 +227,22 @@ export class DimensionService {
     }
 
     private enableLighting(instance: any): void {
-        const java = (globalThis as any).Java;
+        const getJava = () => {
+            const candidates = [
+                (globalThis as any).Java,
+                (globalThis as any).moud?.java,
+                (globalThis as any).moud?.native,
+                (this.api as any).internal?.java,
+                (globalThis as any).require ? (globalThis as any).require('native') : null,
+                (globalThis as any).require ? (globalThis as any).require('moud') : null
+            ];
+            for (const c of candidates) {
+                if (c && (typeof c.type === 'function' || typeof c.getClass === 'function' || typeof c.getNativeClass === 'function')) return c;
+            }
+            return undefined;
+        };
+        const java = getJava();
+
         if (!java) return;
         try {
             const LightEngine = java.type('dev.aprilthepink.light.LightEngine');
@@ -176,7 +255,22 @@ export class DimensionService {
     }
 
     private enableFluids(instance: any): void {
-        const java = (globalThis as any).Java;
+        const getJava = () => {
+            const candidates = [
+                (globalThis as any).Java,
+                (globalThis as any).moud?.java,
+                (globalThis as any).moud?.native,
+                (this.api as any).internal?.java,
+                (globalThis as any).require ? (globalThis as any).require('native') : null,
+                (globalThis as any).require ? (globalThis as any).require('moud') : null
+            ];
+            for (const c of candidates) {
+                if (c && (typeof c.type === 'function' || typeof c.getClass === 'function' || typeof c.getNativeClass === 'function')) return c;
+            }
+            return undefined;
+        };
+        const java = getJava();
+
         if (!java) return;
         try {
             const MinestomFluids = java.type('io.github.togar2.fluids.MinestomFluids');

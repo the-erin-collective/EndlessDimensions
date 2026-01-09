@@ -101,11 +101,11 @@ class Builder {
             );
         }
 
-        // Copy JAR libraries to server folder
+        // Copy JAR libraries to mods folder (Moud 0.7.x scans /mods for mod jars)
         if (fs.existsSync(path.join(__dirname, 'libs'))) {
             this.copyDirectory(
                 path.join(__dirname, 'libs'),
-                path.join(this.buildDir, 'server')
+                path.join(this.buildDir, 'mods')
             );
         }
     }

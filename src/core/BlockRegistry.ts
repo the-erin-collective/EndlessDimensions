@@ -88,7 +88,18 @@ export class BlockRegistry {
                 ]);
                 this.safeBlocks = ['stone', 'dirt', 'grass_block', 'oak_log', 'oak_planks'];
             } else {
-                this.blacklistedBlocks = new Set(blacklistData.blacklistedBlocks || []);
+                // Flatten categories into a single blacklist
+                const allBlacklisted = [];
+                if (blacklistData.categories) {
+                    for (const catKey in blacklistData.categories) {
+                        const category = blacklistData.categories[catKey];
+                        if (category.blocks && Array.isArray(category.blocks)) {
+                            allBlacklisted.push(...category.blocks);
+                        }
+                    }
+                }
+
+                this.blacklistedBlocks = new Set(allBlacklisted);
                 this.safeBlocks = blacklistData.safeBlocks || [];
                 this.logger.info(`Loaded block blacklist from ${usedPath}`);
                 this.logger.info(`Blacklisted blocks: ${this.blacklistedBlocks.size}, Safe blocks: ${this.safeBlocks.length}`);

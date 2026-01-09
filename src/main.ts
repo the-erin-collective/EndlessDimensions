@@ -24,80 +24,70 @@ import { getParticleSystem } from './enhanced/ParticleSystem';
 
 // Helper to log all available keys on the API object
 function logDetailedApi(obj: any, label: string = 'api'): void {
-    if (!obj) {
-        console.log(`[MAIN] ${label} is null or undefined`);
-        return;
-    }
+    console.log(`[MAIN] --- NUCLEAR DISCOVERY START (v6) ---`);
 
-    try {
-        // --- NUCLEAR DISCOVERY ---
-        console.log('[MAIN] --- NUCLEAR DISCOVERY START (v4) ---');
+    const probe = (target: any, name: string, depth = 0) => {
+        if (!target || depth > 3) return;
+        try {
+            // Use getOwnPropertyNames to find hidden keys
+            const keys = Object.getOwnPropertyNames(target);
+            console.log(`[DISCOVERY] Exploring ${name} (${keys.length} keys, Depth: ${depth})`);
 
-        // 1. Asset Path battery (Simplified)
-        const testPaths = [
-            'endlessdimensions:blockBlacklist.json',
-            'endlessdimensions:easter_egg_dimensions/ant.json'
-        ];
+            keys.forEach(key => {
+                try {
+                    const val = target[key];
+                    const type = typeof val;
+                    const str = String(val).substring(0, 50);
 
-        console.log(`[MAIN] Testing ${testPaths.length} primary asset paths...`);
-        testPaths.forEach(p => {
-            try {
-                const data = (globalThis as any).Moud.assets.loadText(p);
-                console.log(`[MAIN] ASSET SUCCESS: "${p}" -> (length: ${data.length})`);
-            } catch (e: any) {
-                console.log(`[MAIN] ASSET FAIL: "${p}" -> ${e.message || e}`);
+                    console.log(`[DISCOVERY]   KEY: ${key} | TYPE: ${type} | STR: ${str}`);
+
+                    // Look for Java/State/Native triggers
+                    const lkey = key.toLowerCase();
+                    if (lkey.includes('java') || lkey.includes('state') || lkey.includes('native') || lkey.includes('bridge') || lkey.includes('getclass') || lkey.includes('type')) {
+                        console.log(`⭐ INTERESTING KEY: ${name}.${key} (Type: ${type})`);
+                    }
+
+                    // Call zero-arg getters
+                    if (type === 'function' && (key.startsWith('get') || key.startsWith('is')) && key.length > 2) {
+                        try {
+                            const result = val.call(target);
+                            console.log(`⤴️ GETTER CALL: ${name}.${key}() -> Result: ${typeof result} (${String(result).substring(0, 30)})`);
+                        } catch (e) { }
+                    }
+
+                    // Recurse
+                    if (type === 'object' && val !== null && !Array.isArray(val) && depth < 2) {
+                        probe(val, `${name}.${key}`, depth + 1);
+                    }
+                } catch (e) { }
+            });
+        } catch (e) {
+            console.log(`[DISCOVERY] Failed to probe ${name}: ${e}`);
+        }
+    };
+
+    // Probe Globals
+    const g: any = globalThis;
+    if (typeof (g as any).Moud !== 'undefined') probe((g as any).Moud, 'Moud');
+    if (typeof (g as any).moud !== 'undefined') probe((g as any).moud, 'moud');
+    if (typeof (g as any).api !== 'undefined') probe((g as any).api, 'api');
+
+    // Module Require Quest v6
+    console.log('[MAIN] Module Require Quest v6...');
+    const modulesToTest = ['moud', 'api', 'state', 'shared-value', 'shared-values', '@epi-studio/moud-sdk', 'native'];
+    modulesToTest.forEach(mod => {
+        try {
+            const r = (globalThis as any).require || (typeof require !== 'undefined' ? require : null);
+            if (!r) return;
+            const result = r(mod);
+            if (result) {
+                console.log(`[MAIN] REQUIRE SUCCESS: "${mod}" -> ${typeof result} (${Object.prototype.toString.call(result)})`);
+                probe(result, `require("${mod}")`);
             }
-        });
+        } catch (e) { }
+    });
 
-        // 2. Reflective Probing
-        const visited = new Set();
-        const probe = (target: any, path: string, depth: number) => {
-            if (depth > 4 || !target || (typeof target !== 'object' && typeof target !== 'function') || visited.has(target)) return;
-            visited.add(target);
-
-            try {
-                const keys = Reflect.ownKeys(target);
-                keys.forEach(k => {
-                    try {
-                        const keyStr = String(k);
-                        const val = target[k];
-                        const type = typeof val;
-                        const toString = Object.prototype.toString.call(val);
-
-                        // Java Detection (Improved)
-                        const isJava = toString.includes('Java') || toString.includes('Host') || (val && val.getClass);
-                        if (isJava) {
-                            console.log(`[MAIN] JAVA DETECTED: ${path}.${keyStr} (${toString})`);
-                            if (val.getClass) {
-                                try {
-                                    console.log(`[MAIN] Java Class: ${val.getClass().getName()}`);
-                                } catch (e) { }
-                            }
-                        }
-
-                        // Log target keys
-                        const lowerK = keyStr.toLowerCase();
-                        if (lowerK.includes('internal') || lowerK.includes('state') || lowerK.includes('polyglot') || lowerK.includes('bridge')) {
-                            console.log(`[MAIN] INTERESTING KEY: ${path}.${keyStr} (type: ${type}, toString: ${toString})`);
-                        }
-
-                        if ((type === 'object' || type === 'function') && depth < 4) {
-                            probe(val, `${path}.${keyStr}`, depth + 1);
-                        }
-                    } catch (e) { }
-                });
-            } catch (e) { }
-        };
-
-        console.log('[MAIN] Probing Moud API...');
-        probe((globalThis as any).Moud, 'Moud', 0);
-        console.log('[MAIN] Probing globalThis...');
-        probe(globalThis, 'global', 0);
-
-        console.log('[MAIN] --- NUCLEAR DISCOVERY END ---');
-    } catch (e) {
-        console.log(`[MAIN] Error during nuclear discovery v3: ${e}`);
-    }
+    console.log('[MAIN] --- NUCLEAR DISCOVERY END (v6) ---');
 }
 
 // Simple API wait function
@@ -206,8 +196,40 @@ api.on('server.load', async () => {
         await dimensionService.initialize();
 
         // Initialize Combat (MinestomPvP)
-        const java = (globalThis as any).Java;
-        if (typeof java !== 'undefined') {
+        const getJava = () => {
+            const candidates = [
+                (globalThis as any).Java,
+                (globalThis as any).moud?.java,
+                (globalThis as any).moud?.native,
+                (globalThis as any).require ? (globalThis as any).require('native') : null,
+                (globalThis as any).require ? (globalThis as any).require('moud') : null
+            ];
+
+            for (const c of candidates) {
+                if (!c) continue;
+                // Check for capability
+                const hasType = typeof c.type === 'function';
+                const hasGetClass = typeof c.getClass === 'function';
+                const hasGetNative = typeof c.getNativeClass === 'function';
+
+                if (hasType || hasGetClass || hasGetNative) {
+                    // Create a wrapper to ensure .type() exists
+                    return {
+                        ...c,
+                        type: (name: string) => {
+                            if (hasType) return c.type(name);
+                            if (hasGetClass) return c.getClass(name);
+                            if (hasGetNative) return c.getNativeClass(name);
+                            throw new Error('Java bridge capability lost');
+                        },
+                        _raw: c
+                    };
+                }
+            }
+            return undefined;
+        };
+        const java = getJava();
+        if (typeof java !== 'undefined' && java.type) {
             try {
                 const CombatFeatures = java.type('io.github.togar2.pvp.feature.CombatFeatures');
                 const combatNode = CombatFeatures.modernVanilla().createNode();

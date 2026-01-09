@@ -7,5 +7,6 @@
   "minecraftVersion": "1.20.1",
   "entryPoint": "entry.js",
   "dependencies": [],
-  "mixins": []
+  "mixins": [],
+  "allowJavaInterop": true
 }

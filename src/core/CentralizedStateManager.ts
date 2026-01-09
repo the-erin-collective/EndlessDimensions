@@ -129,14 +129,19 @@ export class CentralizedStateManager {
    */
   private subscribeToGlobalState(): void {
     try {
-      // Check if API has state management capabilities
-      if ((this.api as any).state) {
-        // Subscribe to all state changes
-        (this.api as any).state.subscribe("*", (newState: any) => {
-          this.handleGlobalStateChange(newState);
-        });
+      // Check if API has state management capabilities (with fallbacks for 0.7.x)
+      const stateObj = (this.api as any).state || (this.api as any).internal?.state || (globalThis as any).moud?.state;
 
-        this.logger.debug('Subscribed to global state changes');
+      if (stateObj) {
+        // Subscribe to all state changes
+        if (typeof stateObj.subscribe === 'function') {
+          stateObj.subscribe("*", (newState: any) => {
+            this.handleGlobalStateChange(newState);
+          });
+          this.logger.debug('Subscribed to global state changes');
+        } else {
+          this.logger.warn('State object found but subscribe() is missing');
+        }
       } else {
         this.logger.debug('API state management not available - state synchronization disabled');
       }
@@ -265,20 +270,20 @@ export class CentralizedStateManager {
    */
   private initializeStateCache(): void {
     try {
-      if ((this.api as any).state) {
+      const stateObj = (this.api as any).state || (this.api as any).internal?.state || (globalThis as any).moud?.state || (globalThis as any).moud_state;
+
+      if (stateObj && typeof stateObj.getAll === 'function') {
         // Load current state into cache
-        const currentState = (this.api as any).state.getAll();
+        const currentState = stateObj.getAll();
         if (currentState) {
-          for (const [key, value] of Object.entries(currentState)) {
-            this.stateCache.set(key, value);
-          }
-          this.logger.debug(`Loaded ${this.stateCache.size} state entries into cache`);
+          Object.keys(currentState).forEach(key => {
+            this.stateCache.set(key, currentState[key]);
+          });
+          this.logger.debug('State cache initialized');
         }
       } else {
         this.logger.warn('API state not available - state cache initialization skipped');
       }
-
-      this.logger.debug('State cache initialized');
     } catch (error) {
       this.logger.error('Failed to initialize state cache:', error);
     }

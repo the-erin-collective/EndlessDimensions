@@ -14,13 +14,160 @@ console.log(`[POLYFILL] Polyglot type: ${typeof Polyglot}`);
 console.log(`[POLYFILL] java type: ${typeof java}`);
 console.log(`[POLYFILL] Packages type: ${typeof Packages}`);
 
+if (typeof Graal !== 'undefined') {
+    try {
+        const graalKeys = Object.getOwnPropertyNames(Graal);
+        console.log(`[POLYFILL] Graal keys: ${graalKeys.join(', ')}`);
+        graalKeys.forEach(k => {
+            try {
+                const val = Graal[k];
+                console.log(`[POLYFILL] Graal.${k} type: ${typeof val} (${Object.prototype.toString.call(val)})`);
+            } catch (e) { }
+        });
+    } catch (e) { }
+}
+
+if (typeof Moud !== 'undefined') {
+    try {
+        const moudKeys = Object.getOwnPropertyNames(Moud);
+        console.log(`[POLYFILL] Moud keys: ${moudKeys.join(', ')}`);
+    } catch (e) { }
+}
+
 if (typeof Java !== 'undefined') {
     console.log('[POLYFILL] Java global found, exposing to globalThis.');
     globalThis.Java = Java;
-} else if (typeof Packages !== 'undefined') {
-    console.log('[POLYFILL] Java not found, but Packages is available.');
 } else {
-    console.log('[POLYFILL] Warning: Neither Java nor Packages found in global scope.');
+    // Aggressive Discovery Quest
+    let foundJava = false;
+
+    const trySetJava = (obj, sourceName) => {
+        if (!obj) return false;
+
+        const hasType = typeof obj.type === 'function';
+        const hasGetClass = typeof obj.getClass === 'function';
+        const hasLoad = typeof obj.load === 'function';
+        const hasGetNative = typeof obj.getNativeClass === 'function';
+
+        if (hasType || hasGetClass || hasLoad || hasGetNative) {
+            console.log(`[POLYFILL] SUCCESS: Found Java-like bridge in ${sourceName}!`);
+
+            // Create a robust wrapper
+            const wrapper = {
+                ...obj,
+                type: (name) => {
+                    if (hasType) return obj.type(name);
+                    if (hasGetClass) return obj.getClass(name);
+                    if (hasGetNative) return obj.getNativeClass(name);
+                    if (hasLoad) return obj.load(name);
+                    throw new Error(`Java bridge in ${sourceName} missing type/getClass/load`);
+                },
+                _raw: obj
+            };
+
+            globalThis.Java = wrapper;
+            foundJava = true;
+            return true;
+        }
+        return false;
+    };
+
+    // 1. Check common GraalVM globals
+    if (typeof Polyglot !== 'undefined' && Polyglot.import) {
+        try {
+            const polyJava = Polyglot.import('java');
+            if (trySetJava(polyJava, 'Polyglot.import("java")')) foundJava = true;
+        } catch (e) { }
+    }
+
+    // 2. Check Graal/Moud/api members (including non-enumerable)
+    const checkObjRecursive = (obj, name, depth = 0) => {
+        if (!obj || depth > 2 || foundJava) return;
+        try {
+            const keys = Object.getOwnPropertyNames(obj);
+            for (const key of keys) {
+                if (key.toLowerCase() === 'java' || key === 'native') {
+                    if (trySetJava(obj[key], `${name}.${key}`)) return;
+                }
+                if (typeof obj[key] === 'object' && obj[key] !== null) {
+                    checkObjRecursive(obj[key], `${name}.${key}`, depth + 1);
+                }
+            }
+        } catch (e) { }
+    };
+
+    if (!foundJava && typeof Graal !== 'undefined') checkObjRecursive(Graal, 'Graal');
+    if (!foundJava && typeof Moud !== 'undefined') checkObjRecursive(Moud, 'Moud');
+
+    // 3. Try lowercase moud (Moud 0.7.x spec)
+    if (!foundJava && typeof moud !== 'undefined') {
+        checkObjRecursive(moud, 'moud');
+    }
+
+    // 4. Try it through require (Aggressive Speculative Probing)
+    if (!foundJava && (typeof require !== 'undefined' || globalThis.require)) {
+        const r = globalThis['require'] || require;
+        const tryMod = (modName) => {
+            try {
+                const mod = r(modName);
+                if (mod) {
+                    // Speculative check for methods even if not enumerable
+                    if (typeof mod.type === 'function' || typeof mod.getClass === 'function' || typeof mod.load === 'function' || typeof mod.getNativeClass === 'function') {
+                        return trySetJava(mod, `require("${modName}") [Speculative Match]`);
+                    }
+                    // Depth check for sub-keys
+                    return checkObjRecursive(mod, `require("${modName}")`);
+                }
+            } catch (e) { }
+            return false;
+        };
+
+        if (tryMod('native')) foundJava = true;
+        if (!foundJava && tryMod('moud')) foundJava = true;
+        if (!foundJava && tryMod('api')) foundJava = true;
+    }
+
+    // 5. Moud 0.7.x Specific: Check for a hidden 'native' object in global scope
+    if (!foundJava) {
+        try {
+            if (typeof native !== 'undefined' && (native.type || native.getClass)) {
+                if (trySetJava(native, 'global.native')) foundJava = true;
+            }
+        } catch (e) { }
+    }
+
+    // 6. Fallback to Packages
+    if (!foundJava && typeof Packages !== 'undefined') {
+        console.log('[POLYFILL] Java not found, but Packages is available. Using Packages as Java shim.');
+        globalThis.Java = {
+            type: (name) => {
+                const parts = name.split('.');
+                let curr = Packages;
+                for (const p of parts) {
+                    if (!curr[p]) throw new Error(`Class ${name} not found in Packages`);
+                    curr = curr[p];
+                }
+                return curr;
+            }
+        };
+        foundJava = true;
+    }
+
+    if (!foundJava) {
+        console.log('[POLYFILL] Warning: Neither Java nor Packages found in global scope.');
+    }
+}
+
+// --- 0.1 State Normalization ---
+if (typeof require !== 'undefined' || globalThis.require) {
+    const r = globalThis['require'] || require;
+    try {
+        const stateMod = r('state');
+        if (stateMod && !globalThis.moud_state) {
+            globalThis.moud_state = stateMod;
+            console.log('[POLYFILL] State module found and exposed as moud_state');
+        }
+    } catch (e) { }
 }
 
 // --- 1. Timer Fixes ---
