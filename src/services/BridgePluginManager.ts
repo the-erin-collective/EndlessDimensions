@@ -6,26 +6,67 @@ export class BridgePluginManager {
     private plugins: Map<string, any> = new Map();
     private loadingPromises: Map<string, Promise<any>> = new Map();
     private isInitialized = false;
+    private initializationPromise: Promise<void> | null = null;
     
     constructor() {
-        this.setupPluginDetection();
+        // Don't initialize immediately - wait for explicit call
     }
     
     /**
-     * Setup plugin detection and registration
+     * Setup plugin detection and registration (called when Moud is ready)
      */
-    private setupPluginDetection(): void {
-        // Register plugin ready callbacks
-        globalThis.onMoudReady = (callback) => {
-            if (!this.isInitialized) {
-                this.isInitialized = true;
-                console.log('[BridgePluginManager] Plugin system initialized');
-            }
-            callback();
-        };
+    public async initialize(): Promise<void> {
+        if (this.initializationPromise) {
+            return this.initializationPromise;
+        }
         
-        // Start plugin detection
-        this.detectAndLoadPlugins();
+        this.initializationPromise = this.doInitialize();
+        return this.initializationPromise;
+    }
+    
+    private async doInitialize(): Promise<void> {
+        console.log('[BridgePluginManager] Starting plugin initialization...');
+        
+        // Wait for Moud to be ready and plugins to be loaded
+        await this.waitForMoudReady();
+        
+        // Give plugins a moment to be injected after Moud is ready
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Detect and load plugins
+        await this.detectAndLoadPlugins();
+        
+        this.isInitialized = true;
+        console.log('[BridgePluginManager] Plugin initialization complete.');
+    }
+    
+    /**
+     * Wait for Moud to be ready
+     */
+    private waitForMoudReady(): Promise<void> {
+        return new Promise<void>((resolve) => {
+            if ((globalThis as any).api && ((globalThis as any).api.server || (globalThis as any).api.on)) {
+                console.log('[BridgePluginManager] Moud API is already available');
+                resolve();
+                return;
+            }
+            
+            console.log('[BridgePluginManager] Waiting for Moud API...');
+            const checkInterval = setInterval(() => {
+                if ((globalThis as any).api && ((globalThis as any).api.server || (globalThis as any).api.on)) {
+                    console.log('[BridgePluginManager] Moud API is now available');
+                    clearInterval(checkInterval);
+                    resolve();
+                }
+            }, 100);
+            
+            // Timeout after 10 seconds
+            setTimeout(() => {
+                clearInterval(checkInterval);
+                console.warn('[BridgePluginManager] Moud API check timed out, proceeding anyway');
+                resolve();
+            }, 10000);
+        });
     }
     
     /**
@@ -41,6 +82,13 @@ export class BridgePluginManager {
             { name: 'Trove', globalName: 'Trove', check: () => typeof (globalThis as any).Trove !== 'undefined' },
             { name: 'PvP', globalName: 'PvP', check: () => typeof (globalThis as any).PvP !== 'undefined' }
         ];
+        
+        // Log what's currently available
+        console.log('[BridgePluginManager] Current global scope check:');
+        bridgePlugins.forEach(plugin => {
+            const available = plugin.check();
+            console.log(`[BridgePluginManager] ${plugin.name}: ${available ? '✓ Available' : '✗ Missing'}`);
+        });
         
         // Wait for plugins to be available
         await this.waitForPlugins(bridgePlugins);
@@ -63,17 +111,26 @@ export class BridgePluginManager {
      * Wait for plugins to become available
      */
     public async waitForPlugins(plugins: Array<{name: string, globalName: string, check: () => boolean}>): Promise<void> {
-        const maxWaitTime = 5000; // 5 seconds max wait
+        const maxWaitTime = 10000; // 10 seconds max wait
         const startTime = Date.now();
         
+        console.log(`[BridgePluginManager] Waiting for plugins: ${plugins.map(p => p.name).join(', ')}`);
+        
         while (Date.now() - startTime < maxWaitTime) {
-            await new Promise(resolve => setTimeout(resolve, 100));
+            await new Promise(resolve => setTimeout(resolve, 200));
             
             // Check if all required plugins are available
             const allAvailable = plugins.every(plugin => plugin.check());
             if (allAvailable) {
                 console.log('[BridgePluginManager] All required plugins are available');
-                break;
+                return;
+            }
+            
+            // Log progress
+            const availablePlugins = plugins.filter(plugin => plugin.check()).map(p => p.name);
+            const missingPlugins = plugins.filter(plugin => !plugin.check()).map(p => p.name);
+            if (availablePlugins.length > 0) {
+                console.log(`[BridgePluginManager] Available: ${availablePlugins.join(', ')}, Missing: ${missingPlugins.join(', ')}`);
             }
         }
         

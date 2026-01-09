@@ -14,7 +14,7 @@ public class PvPBridgePlugin {
     
     private static final Logger logger = LoggerFactory.getLogger(PvPBridgePlugin.class);
     
-    private Object graalContext;
+    private Context graalContext;
     private PvPBridge pvpBridge;
     private PvPFacade pvpFacade;
     
@@ -23,7 +23,7 @@ public class PvPBridgePlugin {
             logger.info("Initializing MinestomPvP Bridge Plugin...");
             
             // Cast to GraalVM Context
-            this.graalContext = context;
+            this.graalContext = (Context) context;
             
             // Initialize the new bridge implementation
             pvpBridge = new PvPBridge();
@@ -70,10 +70,6 @@ public class PvPBridgePlugin {
      */
     private void injectPvPFacade() {
         try {
-            // Get the global event node and try to access GraalVM context
-            // In a real implementation, you would get the GraalVM context and injects facade
-            // For now, we'll use the provided context object
-            
             // Inject PvP facade into global scope
             Value bindings = graalContext.getBindings("js");
             bindings.putMember("PvP", pvpFacade);

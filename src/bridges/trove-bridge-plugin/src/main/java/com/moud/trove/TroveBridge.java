@@ -1,6 +1,8 @@
 package com.moud.trove;
 
 import endless.bridge.*;
+import org.graalvm.polyglot.Context;
+import org.graalvm.polyglot.Value;
 import org.slf4j.Logger;
 
 /**
@@ -120,14 +122,16 @@ public class TroveBridge implements InstanceAttachableBridge, DimensionScopedBri
      */
     private void injectIntoGlobalScope() {
         try {
-            // Get the global event node and try to access GraalVM context
-            // In a real implementation, you would get the GraalVM context and inject the facade
-            // For now, we'll log that this would happen
-            context.logger().debug("Trove facade injection would happen here with proper GraalVM access");
+            // Get the current GraalVM context
+            Context graalContext = Context.getCurrent();
             
-            // Example of what the injection would look like:
-            // Value bindings = graalContext.getBindings("js");
-            // bindings.putMember("Trove", troveFacade);
+            // Get the JS bindings
+            Value bindings = graalContext.getBindings("js");
+            
+            // Inject the facade
+            bindings.putMember("Trove", troveFacade);
+            
+            context.logger().info("Trove facade injected into global scope");
             
         } catch (Exception e) {
             context.logger().warn("Could not inject Trove facade into global scope", e);

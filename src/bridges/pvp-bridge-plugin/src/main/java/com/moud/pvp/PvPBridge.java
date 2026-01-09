@@ -1,6 +1,8 @@
 package com.moud.pvp;
 
 import endless.bridge.*;
+import org.graalvm.polyglot.Context;
+import org.graalvm.polyglot.Value;
 import org.slf4j.Logger;
 
 /**
@@ -43,8 +45,10 @@ public class PvPBridge implements InstanceAttachableBridge, DimensionScopedBridg
             // Load combat profiles
             registry.load(pvpAssets);
             
-            // Inject PvP facade into global scope for compatibility
-            injectIntoGlobalScope();
+            // Load combat profiles
+            registry.load(pvpAssets);
+            
+            // Injection is now handled by PvPBridgePlugin
             
             initialized = true;
             context.logger().info("MinestomPvP bridge initialized successfully");
@@ -147,22 +151,25 @@ public class PvPBridge implements InstanceAttachableBridge, DimensionScopedBridg
 
     /**
      * Inject PvP facade into the global JavaScript scope for compatibility
+     * Deprecated: Handled by PvPBridgePlugin
      */
-    private void injectIntoGlobalScope() {
+    /* private void injectIntoGlobalScope() {
         try {
-            // Get the global event node and try to access GraalVM context
-            // In a real implementation, you would get the GraalVM context and inject the facade
-            // For now, we'll log that this would happen
-            context.logger().debug("PvP facade injection would happen here with proper GraalVM access");
+            // Get the current GraalVM context
+            Context graalContext = Context.getCurrent();
             
-            // Example of what the injection would look like:
-            // Value bindings = graalContext.getBindings("js");
-            // bindings.putMember("PvP", pvpFacade);
+            // Get the JS bindings
+            Value bindings = graalContext.getBindings("js");
+            
+            // Inject the facade
+            bindings.putMember("PvP", new PvPFacade(this));
+            
+            context.logger().info("PvP facade injected into global scope");
             
         } catch (Exception e) {
             context.logger().warn("Could not inject PvP facade into global scope", e);
         }
-    }
+    } */
 
     /**
      * Get the current PvP feature registry

@@ -49,33 +49,33 @@ class Builder {
 
     async buildTerraPlugin() {
         console.log('🌍 Building Terra bridge plugin...');
-        
+
         const terraPluginDir = path.join(__dirname, 'src', 'bridges', 'terra-bridge-plugin');
-        
+
         if (!fs.existsSync(terraPluginDir)) {
             console.log('  ⚠ Terra bridge plugin directory not found, skipping...');
             return;
         }
-        
+
         try {
             // Check if Gradle wrapper exists
             const gradlewWrapper = process.platform === 'win32' ? 'gradlew.bat' : './gradlew';
             const gradlewPath = path.join(terraPluginDir, gradlewWrapper);
-            
+
             if (!fs.existsSync(gradlewPath)) {
                 console.log('  ⚠ Gradle wrapper not found, skipping Terra plugin build...');
                 return;
             }
-            
+
             // Build the Terra bridge plugin
             console.log('  📦 Building Terra bridge plugin with Gradle...');
             execSync(gradlewWrapper + ' shadowJar', {
                 cwd: terraPluginDir,
                 stdio: 'inherit'
             });
-            
+
             console.log('  ✅ Terra bridge plugin built successfully');
-            
+
         } catch (error) {
             console.warn('  ⚠ Terra bridge plugin build failed:', error.message);
             console.log('  💡 Run manually: cd src/bridges/terra-bridge-plugin && ./gradlew shadowJar');
@@ -84,43 +84,50 @@ class Builder {
 
     async buildPolarPlugin() {
         console.log('🧊 Building Polar bridge plugin...');
-        
+
         const polarPluginDir = path.join(__dirname, 'src', 'bridges', 'polar-bridge-plugin');
-        
+
         if (!fs.existsSync(polarPluginDir)) {
             console.log('  ⚠ Polar bridge plugin directory not found, skipping...');
             return;
         }
-        
+
         try {
             // Check if Gradle wrapper exists
             const gradlewWrapper = process.platform === 'win32' ? 'gradlew.bat' : './gradlew';
             const gradlewPath = path.join(polarPluginDir, gradlewWrapper);
-            
+
             if (!fs.existsSync(gradlewPath)) {
                 throw new Error(`Gradle wrapper not found at ${gradlewPath}`);
             }
-            
+
             // Build the Polar bridge plugin using Gradle
             console.log('  📦 Building Polar bridge plugin with Gradle...');
             execSync(gradlewWrapper + ' shadowJar', { cwd: polarPluginDir, stdio: 'inherit' });
-            
+
             // Copy the built JAR to the plugins directory
-            const polarJarPath = path.join(polarPluginDir, 'build', 'libs', 'moud-polar-bridge-1.0.0-BETA.jar');
+            const polarBuildDir = path.join(polarPluginDir, 'build', 'libs');
+            const polarJarPath = path.join(polarBuildDir, `moud-polar-bridge-${this.bridgeVersion}.jar`);
+
             const pluginsDir = path.join(this.buildDir, 'plugins');
-            
+
             // Ensure plugins directory exists
             if (!fs.existsSync(pluginsDir)) {
                 fs.mkdirSync(pluginsDir, { recursive: true });
             }
-            
+
             if (fs.existsSync(polarJarPath)) {
-                fs.copyFileSync(polarJarPath, path.join(pluginsDir, 'moud-polar-bridge-1.0.0-BETA.jar'));
+                // Copy the jar
+                console.log(`[Builder] Copying Polar bridge plugin to ${pluginsDir}`);
+                fs.copyFileSync(
+                    polarJarPath,
+                    path.join(pluginsDir, `moud-polar-bridge-${this.bridgeVersion}.jar`)
+                );
                 console.log('  ✅ Polar bridge plugin built and copied successfully');
             } else {
                 console.log('  ⚠ Polar bridge plugin JAR not found, skipping...');
             }
-            
+
         } catch (error) {
             console.error('  ❌ Failed to build Polar bridge plugin:', error.message);
             console.log('  ⚠ Continuing build without Polar bridge plugin...');
@@ -129,33 +136,33 @@ class Builder {
 
     async buildTrovePlugin() {
         console.log('💎 Building Trove bridge plugin...');
-        
+
         const trovePluginDir = path.join(__dirname, 'src', 'bridges', 'trove-bridge-plugin');
-        
+
         if (!fs.existsSync(trovePluginDir)) {
             console.log('  ⚠ Trove bridge plugin directory not found, skipping...');
             return;
         }
-        
+
         try {
             // Check if Gradle wrapper exists
             const gradlewWrapper = process.platform === 'win32' ? 'gradlew.bat' : './gradlew';
             const gradlewPath = path.join(trovePluginDir, gradlewWrapper);
-            
+
             if (!fs.existsSync(gradlewPath)) {
                 console.log('  ⚠ Gradle wrapper not found for Trove, skipping...');
                 return;
             }
-            
+
             // Build the Trove bridge plugin
             console.log('  📦 Building Trove bridge plugin with Gradle...');
             execSync(gradlewWrapper + ' shadowJar', {
                 cwd: trovePluginDir,
                 stdio: 'inherit'
             });
-            
+
             console.log('  ✅ Trove bridge plugin built successfully');
-            
+
         } catch (error) {
             console.warn('  ⚠ Trove bridge plugin build failed:', error.message);
             console.log('  💡 Run manually: cd src/bridges/trove-bridge-plugin && ./gradlew shadowJar');
@@ -164,33 +171,33 @@ class Builder {
 
     async buildPvPPlugin() {
         console.log('⚔️ Building PvP bridge plugin...');
-        
+
         const pvpPluginDir = path.join(__dirname, 'src', 'bridges', 'pvp-bridge-plugin');
-        
+
         if (!fs.existsSync(pvpPluginDir)) {
             console.log('  ⚠ PvP bridge plugin directory not found, skipping...');
             return;
         }
-        
+
         try {
             // Check if Gradle wrapper exists
             const gradlewWrapper = process.platform === 'win32' ? 'gradlew.bat' : './gradlew';
             const gradlewPath = path.join(pvpPluginDir, gradlewWrapper);
-            
+
             if (!fs.existsSync(gradlewPath)) {
                 console.log('  ⚠ Gradle wrapper not found for PvP, skipping...');
                 return;
             }
-            
+
             // Build the PvP bridge plugin
             console.log('  📦 Building PvP bridge plugin with Gradle...');
             execSync(gradlewWrapper + ' shadowJar', {
                 cwd: pvpPluginDir,
                 stdio: 'inherit'
             });
-            
+
             console.log('  ✅ PvP bridge plugin built successfully');
-            
+
         } catch (error) {
             console.warn('  ⚠ PvP bridge plugin build failed:', error.message);
             console.log('  💡 Run manually: cd src/bridges/pvp-bridge-plugin && ./gradlew shadowJar');
@@ -216,6 +223,7 @@ class Builder {
         fs.mkdirSync(this.buildDir, { recursive: true });
         fs.mkdirSync(path.join(this.buildDir, 'assets'), { recursive: true });
         fs.mkdirSync(path.join(this.buildDir, 'data'), { recursive: true });
+        fs.mkdirSync(path.join(this.buildDir, 'plugins'), { recursive: true }); // Ensure plugins directory exists
     }
 
     async copyStaticFiles() {
@@ -272,15 +280,17 @@ class Builder {
             );
         }
 
-        // Copy Terra bridge plugin to plugins folder
+        // Copy Terra bridge plugin to plugins/ folder
         const terraBuildDir = path.join(__dirname, 'src', 'bridges', 'terra-bridge-plugin', 'build', 'libs');
         if (fs.existsSync(terraBuildDir)) {
             const pluginsDir = path.join(this.buildDir, 'plugins');
-            fs.mkdirSync(pluginsDir, { recursive: true });
+            if (!fs.existsSync(pluginsDir)) {
+                fs.mkdirSync(pluginsDir, { recursive: true });
+            }
 
             const terraJars = fs.readdirSync(terraBuildDir);
             for (const jar of terraJars) {
-                if (jar.startsWith('moud-terra-bridge') && jar.endsWith('.jar') && 
+                if (jar.startsWith('moud-terra-bridge') && jar.endsWith('.jar') &&
                     !jar.includes('-sources.jar') && !jar.includes('-javadoc.jar')) {
                     fs.copyFileSync(
                         path.join(terraBuildDir, jar),
@@ -295,11 +305,13 @@ class Builder {
         const troveBuildDir = path.join(__dirname, 'src', 'bridges', 'trove-bridge-plugin', 'build', 'libs');
         if (fs.existsSync(troveBuildDir)) {
             const pluginsDir = path.join(this.buildDir, 'plugins');
-            fs.mkdirSync(pluginsDir, { recursive: true });
+            if (!fs.existsSync(pluginsDir)) {
+                fs.mkdirSync(pluginsDir, { recursive: true });
+            }
 
             const troveJars = fs.readdirSync(troveBuildDir);
             for (const jar of troveJars) {
-                if (jar.startsWith('moud-trove-bridge') && jar.endsWith('.jar') && 
+                if (jar.startsWith('moud-trove-bridge') && jar.endsWith('.jar') &&
                     !jar.includes('-sources.jar') && !jar.includes('-javadoc.jar')) {
                     fs.copyFileSync(
                         path.join(troveBuildDir, jar),
@@ -314,11 +326,13 @@ class Builder {
         const pvpBuildDir = path.join(__dirname, 'src', 'bridges', 'pvp-bridge-plugin', 'build', 'libs');
         if (fs.existsSync(pvpBuildDir)) {
             const pluginsDir = path.join(this.buildDir, 'plugins');
-            fs.mkdirSync(pluginsDir, { recursive: true });
+            if (!fs.existsSync(pluginsDir)) {
+                fs.mkdirSync(pluginsDir, { recursive: true });
+            }
 
             const pvpJars = fs.readdirSync(pvpBuildDir);
             for (const jar of pvpJars) {
-                if (jar.startsWith('moud-pvp-bridge') && jar.endsWith('.jar') && 
+                if (jar.startsWith('moud-pvp-bridge') && jar.endsWith('.jar') &&
                     !jar.includes('-sources.jar') && !jar.includes('-javadoc.jar')) {
                     fs.copyFileSync(
                         path.join(pvpBuildDir, jar),

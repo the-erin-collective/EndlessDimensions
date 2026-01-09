@@ -145,11 +145,10 @@ async function postBuild() {
     // Copy Polar bridge plugin if built
     const polarPluginPath = path.join(__dirname, 'src', 'bridges', 'polar-bridge-plugin', 'build', 'libs', 'moud-polar-bridge-1.0.0-BETA.jar');
     if (fs.existsSync(polarPluginPath)) {
-        const pluginsDir = path.join(tempDir, 'plugins');
-        if (!fs.existsSync(pluginsDir)) {
-            fs.mkdirSync(pluginsDir, { recursive: true });
+        if (!fs.existsSync(destPluginsDir)) {
+            fs.mkdirSync(destPluginsDir, { recursive: true });
         }
-        fs.copyFileSync(polarPluginPath, path.join(pluginsDir, 'moud-polar-bridge-1.0.0-BETA.jar'));
+        fs.copyFileSync(polarPluginPath, path.join(destPluginsDir, 'moud-polar-bridge-1.0.0-BETA.jar'));
         console.log('  ✓ Included Polar bridge plugin moud-polar-bridge-1.0.0-BETA.jar in plugins/');
     } else {
         console.log('  ⚠ Polar bridge plugin not built. Run: cd src/bridges/polar-bridge-plugin && ./gradlew shadowJar');
@@ -158,11 +157,10 @@ async function postBuild() {
     // Copy PvP bridge plugin if built
     const pvpPluginPath = path.join(__dirname, 'src', 'bridges', 'pvp-bridge-plugin', 'build', 'libs', 'moud-pvp-bridge-1.0.0-BETA.jar');
     if (fs.existsSync(pvpPluginPath)) {
-        const pluginsDir = path.join(tempDir, 'plugins');
-        if (!fs.existsSync(pluginsDir)) {
-            fs.mkdirSync(pluginsDir, { recursive: true });
+        if (!fs.existsSync(destPluginsDir)) {
+            fs.mkdirSync(destPluginsDir, { recursive: true });
         }
-        fs.copyFileSync(pvpPluginPath, path.join(pluginsDir, 'moud-pvp-bridge-1.0.0-BETA.jar'));
+        fs.copyFileSync(pvpPluginPath, path.join(destPluginsDir, 'moud-pvp-bridge-1.0.0-BETA.jar'));
         console.log('  ✓ Included PvP bridge plugin moud-pvp-bridge-1.0.0-BETA.jar in plugins/');
     } else {
         console.log('  ⚠ PvP bridge plugin not built. Run: cd src/bridges/pvp-bridge-plugin && ./gradlew shadowJar');
@@ -171,11 +169,10 @@ async function postBuild() {
     // Copy Trove bridge plugin if built
     const trovePluginPath = path.join(__dirname, 'src', 'bridges', 'trove-bridge-plugin', 'build', 'libs', 'moud-trove-bridge-1.0.0-BETA.jar');
     if (fs.existsSync(trovePluginPath)) {
-        const pluginsDir = path.join(tempDir, 'plugins');
-        if (!fs.existsSync(pluginsDir)) {
-            fs.mkdirSync(pluginsDir, { recursive: true });
+        if (!fs.existsSync(destPluginsDir)) {
+            fs.mkdirSync(destPluginsDir, { recursive: true });
         }
-        fs.copyFileSync(trovePluginPath, path.join(pluginsDir, 'moud-trove-bridge-1.0.0-BETA.jar'));
+        fs.copyFileSync(trovePluginPath, path.join(destPluginsDir, 'moud-trove-bridge-1.0.0-BETA.jar'));
         console.log('  ✓ Included Trove bridge plugin moud-trove-bridge-1.0.0-BETA.jar in plugins/');
     } else {
         console.log('  ⚠ Trove bridge plugin not built. Run: cd src/bridges/trove-bridge-plugin && ./gradlew shadowJar');

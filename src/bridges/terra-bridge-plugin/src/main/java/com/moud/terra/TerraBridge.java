@@ -120,9 +120,16 @@ public class TerraBridge implements InstanceAttachableBridge, DimensionScopedBri
      */
     private void injectIntoGlobalScope() {
         try {
-            // Get the global event node and try to access GraalVM context
-            // This is a simplified approach - in practice, you'd need proper access to the GraalVM context
-            context.logger().debug("Terra facade injection would happen here with proper GraalVM access");
+            // Get the current GraalVM context
+            Context graalContext = Context.getCurrent();
+            
+            // Get the JS bindings
+            Value bindings = graalContext.getBindings("js");
+            
+            // Inject the facade
+            bindings.putMember("Terra", terraFacade);
+            
+            context.logger().info("Terra facade injected into global scope");
             
         } catch (Exception e) {
             context.logger().warn("Could not inject Terra facade into global scope", e);

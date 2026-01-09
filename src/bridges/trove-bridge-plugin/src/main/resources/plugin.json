@@ -1,0 +1,29 @@
+{
+    "id": "trove-bridge",
+    "name": "Trove Bridge Plugin",
+    "version": "1.0.0-BETA",
+    "description": "Bridges Trove loot table engine with Moud's TypeScript runtime via GraalVM polyglot interoperability",
+    "author": "Moud-Trove Bridge Team",
+    "mainClass": "com.moud.trove.TroveBridgePlugin",
+    "depends": [
+        "plugin-api"
+    ],
+    "provides": [
+        "trove-loot"
+    ],
+    "permissions": [
+        "trove.generate",
+        "trove.configure"
+    ],
+    "graalvm": {
+        "hostAccess": "explicit",
+        "allowClassLoading": [
+            "com.moud.trove",
+            "net.minestom"
+        ],
+        "resourceLimits": {
+            "statementCount": 100000,
+            "memoryMB": 512
+        }
+    }
+}

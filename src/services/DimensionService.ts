@@ -24,13 +24,8 @@ export class DimensionService {
 
         console.log('[DimensionService] Initializing with BridgePluginManager...');
 
-        // Initialize bridge plugin manager
-        await this.bridgeManager.waitForPlugins([
-            { name: 'Terra', globalName: 'Terra', check: () => typeof (globalThis as any).Terra !== 'undefined' },
-            { name: 'Polar', globalName: 'Polar', check: () => typeof (globalThis as any).Polar !== 'undefined' },
-            { name: 'Trove', globalName: 'Trove', check: () => typeof (globalThis as any).Trove !== 'undefined' },
-            { name: 'PvP', globalName: 'PvP', check: () => typeof (globalThis as any).PvP !== 'undefined' }
-        ]);
+        // Initialize bridge plugin manager first
+        await this.bridgeManager.initialize();
 
         console.log('[DimensionService] BridgePluginManager initialized successfully');
 

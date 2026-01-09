@@ -19,10 +19,8 @@ export class LootService {
     public async initialize(): Promise<void> {
         console.log('[LootService] Initializing with BridgePluginManager...');
         
-        // Wait for Trove plugin to be available
-        await this.bridgeManager.waitForPlugins([
-            { name: 'Trove', globalName: 'Trove', check: () => typeof (globalThis as any).Trove !== 'undefined' }
-        ]);
+        // Initialize bridge plugin manager first
+        await this.bridgeManager.initialize();
         
         const trovePlugin = this.bridgeManager.getPlugin('Trove');
         if (!trovePlugin) {

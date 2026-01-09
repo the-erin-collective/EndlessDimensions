@@ -14,7 +14,7 @@ public class TroveBridgePlugin {
     
     private static final Logger logger = LoggerFactory.getLogger(TroveBridgePlugin.class);
     
-    private Object graalContext;
+    private Context graalContext;
     private TroveBridge troveBridge;
     private TroveFacade troveFacade;
     
@@ -23,7 +23,7 @@ public class TroveBridgePlugin {
             logger.info("Initializing Trove Bridge Plugin...");
             
             // Cast to GraalVM Context
-            this.graalContext = context;
+            this.graalContext = (Context) context;
             
             // Initialize the new bridge implementation
             troveBridge = new TroveBridge();
@@ -70,14 +70,11 @@ public class TroveBridgePlugin {
      */
     private void injectTroveFacade() {
         try {
-            // In a real implementation, you'd get the GraalVM context and inject the facade
-            // For now, we'll log that this would happen
-            logger.debug("Trove facade injection would happen here with proper GraalVM access");
+            // Inject Trove facade into global scope
+            Value bindings = graalContext.getBindings("js");
+            bindings.putMember("Trove", troveFacade);
             
-            // Example of what the injection would look like:
-            // Value bindings = graalContext.getBindings("js");
-            // bindings.putMember("Trove", troveFacade);
-            
+            logger.debug("Trove facade injected into global scope");
         } catch (Exception e) {
             logger.error("Failed to inject Trove facade into global scope", e);
         }

@@ -2,6 +2,8 @@ package com.moud.polar;
 
 import endless.bridge.*;
 import net.minestom.server.instance.InstanceContainer;
+import org.graalvm.polyglot.Context;
+import org.graalvm.polyglot.Value;
 import org.slf4j.Logger;
 
 /**
@@ -116,9 +118,16 @@ public class PolarBridge implements InstanceAttachableBridge, DimensionScopedBri
      */
     private void injectIntoGlobalScope() {
         try {
-            // Get the global event node and try to access GraalVM context
-            // This is a simplified approach - in practice, you'd need proper access to the GraalVM context
-            context.logger().debug("Polar facade injection would happen here with proper GraalVM access");
+            // Get the current GraalVM context
+            Context graalContext = Context.getCurrent();
+            
+            // Get the JS bindings
+            Value bindings = graalContext.getBindings("js");
+            
+            // Inject the facade
+            bindings.putMember("Polar", polarFacade);
+            
+            context.logger().info("Polar facade injected into global scope");
             
         } catch (Exception e) {
             context.logger().warn("Could not inject Polar facade into global scope", e);
