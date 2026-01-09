@@ -1,0 +1,62 @@
+plugins {
+    id 'java'
+    id 'com.gradleup.shadow' version '8.3.0'
+}
+
+group = 'com.moud.terra'
+version = '1.0.0-BETA'
+
+repositories {
+    mavenCentral()
+    maven { url 'https://repo.codemc.io/repository/maven-public/' }
+    maven { url 'https://mvn.everbuild.org/public' }
+}
+
+dependencies {
+    // Core Terra dependency
+    implementation 'com.dfsek.terra:minestom:6.6.0-BETA+810d10ac0'
+    
+    // GraalVM Polyglot (provided by Moud if available)
+    compileOnly 'org.graalvm.sdk:graal-sdk:24.0.0'
+    
+    // Testing dependencies
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.0'
+    testImplementation 'org.mockito:mockito-core:5.5.0'
+    testImplementation 'org.mockito:mockito-junit-jupiter:5.5.0'
+    testImplementation 'org.graalvm.sdk:graal-sdk:24.0.0'
+}
+
+shadowJar {
+    archiveBaseName.set('moud-terra-bridge')
+    archiveClassifier.set('')
+    mergeServiceFiles()
+    // Shade Terra dependencies to avoid classpath conflicts
+    relocate 'com.dfsek.terra', 'moud.deps.terra'
+    relocate 'com.github.benmanes.caffeine', 'moud.deps.caffeine'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+test {
+    useJUnitPlatform()
+    
+    // Configure JVM arguments for tests
+    jvmArgs = [
+        '--add-opens', 'java.base/java.lang=ALL-UNNAMED',
+        '--add-opens', 'java.base/java.util=ALL-UNNAMED',
+        '-Dgraalvm.PolyglotEngine.WarnInterpreterOnly=false'
+    ]
+    
+    // Set system properties for testing
+    systemProperty 'java.awt.headless', 'true'
+    
+    // Configure test logging
+    testLogging {
+        events "passed", "skipped", "failed"
+        exceptionFormat "full"
+    }
+}

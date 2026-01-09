@@ -23,6 +23,23 @@ import { getSoundSystem } from './enhanced/SoundSystem';
 import { getParticleSystem } from './enhanced/ParticleSystem';
 
 // Helper to log all available keys on the API object
+export const debugGlobalScope = () => {
+    try {
+        const keys = Object.getOwnPropertyNames(globalThis);
+        console.log("[DEBUG] Available Globals:", JSON.stringify(keys));
+        console.log("[DEBUG] moud object exists:", !!(globalThis as any).moud);
+        if ((globalThis as any).moud) {
+            console.log("[DEBUG] moud keys:", Object.getOwnPropertyNames((globalThis as any).moud));
+        }
+        console.log("[DEBUG] Java global exists:", !!(globalThis as any).Java);
+        console.log("[DEBUG] Packages global exists:", !!(globalThis as any).Packages);
+    } catch (e) {
+        console.error("[DEBUG] Global scope probe failed:", e);
+    }
+};
+
+debugGlobalScope();
+
 function logDetailedApi(obj: any, label: string = 'api'): void {
     console.log(`[MAIN] --- NUCLEAR DISCOVERY START (v6) ---`);
 

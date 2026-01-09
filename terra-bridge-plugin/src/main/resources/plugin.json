@@ -1,0 +1,42 @@
+{
+  "id": "terra-bridge",
+  "name": "Terra Bridge Plugin",
+  "version": "1.0.0-BETA",
+  "description": "Bridges Terra world generation engine with Moud's TypeScript runtime via GraalVM polyglot interoperability",
+  "author": "Moud-Terra Bridge Team",
+  "mainClass": "com.moud.terra.TerraBridgePlugin",
+  "depends": [
+    "plugin-api"
+  ],
+  "provides": [
+    "terra-worldgen"
+  ],
+  "permissions": [
+    "terra.generate",
+    "terra.configure",
+    "terra.stats"
+  ],
+  "graalvm": {
+    "hostAccess": "explicit",
+    "allowClassLoading": [
+      "com.dfsek.terra",
+      "net.minestom"
+    ],
+    "resourceLimits": {
+      "statementCount": 100000,
+      "memoryMB": 512
+    }
+  },
+  "config": {
+    "cache": {
+      "maximumSize": 1024,
+      "expireAfterWrite": 10,
+      "recordStats": true
+    },
+    "generation": {
+      "defaultSeed": 42,
+      "enableAsyncGeneration": true,
+      "maxConcurrentChunks": 8
+    }
+  }
+}

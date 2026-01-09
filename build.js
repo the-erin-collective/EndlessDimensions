@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
 
 // Build script for Endless Dimensions mod
 class Builder {
@@ -13,6 +14,9 @@ class Builder {
         console.log('🔨 Building Endless Dimensions Mod...');
 
         try {
+            // Build Terra bridge plugin first
+            await this.buildTerraPlugin();
+
             // Clean previous builds
             await this.clean();
 
@@ -31,6 +35,41 @@ class Builder {
         } catch (error) {
             console.error('❌ Build failed:', error);
             process.exit(1);
+        }
+    }
+
+    async buildTerraPlugin() {
+        console.log('🌍 Building Terra bridge plugin...');
+        
+        const terraPluginDir = path.join(__dirname, 'terra-bridge-plugin');
+        
+        if (!fs.existsSync(terraPluginDir)) {
+            console.log('  ⚠ Terra bridge plugin directory not found, skipping...');
+            return;
+        }
+        
+        try {
+            // Check if Gradle wrapper exists
+            const gradlewWrapper = process.platform === 'win32' ? 'gradlew.bat' : './gradlew';
+            const gradlewPath = path.join(terraPluginDir, gradlewWrapper);
+            
+            if (!fs.existsSync(gradlewPath)) {
+                console.log('  ⚠ Gradle wrapper not found, skipping Terra plugin build...');
+                return;
+            }
+            
+            // Build the Terra bridge plugin
+            console.log('  📦 Building Terra bridge plugin with Gradle...');
+            execSync(gradlewWrapper + ' shadowJar', {
+                cwd: terraPluginDir,
+                stdio: 'inherit'
+            });
+            
+            console.log('  ✅ Terra bridge plugin built successfully');
+            
+        } catch (error) {
+            console.warn('  ⚠ Terra bridge plugin build failed:', error.message);
+            console.log('  💡 Run manually: cd terra-bridge-plugin && ./gradlew shadowJar');
         }
     }
 
@@ -107,6 +146,25 @@ class Builder {
                 path.join(__dirname, 'libs'),
                 path.join(this.buildDir, 'mods')
             );
+        }
+
+        // Copy Terra bridge plugin to plugins folder
+        const terraBuildDir = path.join(__dirname, 'terra-bridge-plugin', 'build', 'libs');
+        if (fs.existsSync(terraBuildDir)) {
+            const pluginsDir = path.join(this.buildDir, 'plugins');
+            fs.mkdirSync(pluginsDir, { recursive: true });
+
+            const terraJars = fs.readdirSync(terraBuildDir);
+            for (const jar of terraJars) {
+                if (jar.startsWith('moud-terra-bridge') && jar.endsWith('.jar') && 
+                    !jar.includes('-sources.jar') && !jar.includes('-javadoc.jar')) {
+                    fs.copyFileSync(
+                        path.join(terraBuildDir, jar),
+                        path.join(pluginsDir, jar)
+                    );
+                    console.log(`  ✓ Copied Terra bridge plugin ${jar} to plugins/`);
+                }
+            }
         }
     }
 

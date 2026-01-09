@@ -119,6 +119,29 @@ async function postBuild() {
         }
     }
 
+    // NEW: Copy Terra bridge plugin Shadow JAR to plugins directory
+    const terraPluginDir = path.join(projectRoot, 'terra-bridge-plugin');
+    const terraBuildDir = path.join(terraPluginDir, 'build', 'libs');
+    const destPluginsDir = path.join(tempDir, 'plugins');
+
+    if (fs.existsSync(terraBuildDir)) {
+        if (!fs.existsSync(destPluginsDir)) {
+            await fs.promises.mkdir(destPluginsDir, { recursive: true });
+        }
+
+        const terraJars = await fs.promises.readdir(terraBuildDir);
+        for (const jar of terraJars) {
+            if (jar.startsWith('moud-terra-bridge') && jar.endsWith('.jar') && !jar.includes('-sources.jar') && !jar.includes('-javadoc.jar')) {
+                const srcPath = path.join(terraBuildDir, jar);
+                const destPath = path.join(destPluginsDir, jar);
+                await fs.promises.copyFile(srcPath, destPath);
+                console.log(`  ✓ Included Terra bridge plugin ${jar} in plugins/`);
+            }
+        }
+    } else {
+        console.log('  ⚠ Terra bridge plugin not built. Run: cd terra-bridge-plugin && ./gradlew shadowJar');
+    }
+
     // Update launcher scripts to use current directory as project root
     console.log('Updating launcher scripts...');
     const runBatPath = path.join(tempDir, 'run.bat');
