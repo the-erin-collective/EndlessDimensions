@@ -1,10 +1,14 @@
 package endless.bridge;
 
+import net.minestom.server.event.Event;
+import net.minestom.server.event.EventNode;
 import org.slf4j.Logger;
+
+import java.nio.file.Path;
 
 /**
  * Provides bridges with access to Moud and Endless infrastructure without tight coupling.
- * This avoids bridges needing to know how Moud resolves assets.
+ * This avoids bridges needing to know how Moud resolves assets or manages configurations.
  */
 public interface BridgeContext {
 
@@ -12,19 +16,19 @@ public interface BridgeContext {
      * Root of resolved Moud assets (read-only)
      * @return Path to the assets directory
      */
-    Object assetsRoot();
+    Path assetsRoot();
 
     /**
      * Root of writable config directory
      * @return Path to the config directory
      */
-    Object configRoot();
+    Path configRoot();
 
     /**
-     * Global event node (if needed)
+     * Global Minestom event node (if needed)
      * @return The global event node
      */
-    Object globalEventNode();
+    EventNode<Event> globalEventNode();
 
     /**
      * Logger scoped to the bridge

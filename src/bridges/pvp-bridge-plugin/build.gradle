@@ -4,15 +4,13 @@ plugins {
     id 'com.gradleup.shadow' version '8.3.0'
 }
 
-group = 'com.moud.trove'
+group = 'com.moud.pvp'
 version = '1.0.0-BETA'
 
 repositories {
     mavenCentral()
     maven { url 'https://repo.codemc.io/repository/maven-public/' }
-    maven { url 'https://mvn.everbuild.org/public' }
-    // Add Trove repository when available
-    // maven { url = 'https://repo.goldenstack.dev/repository/maven-public/' }
+    maven { url = 'https://repo.minestompvp.com/repository/maven-public/' }
 }
 
 dependencies {
@@ -40,13 +38,13 @@ test {
 }
 
 shadowJar {
-    archiveBaseName.set('moud-trove-bridge')
+    archiveBaseName.set('moud-pvp-bridge')
     archiveClassifier.set('')
     mergeServiceFiles()
 }
 
 jar {
-    archiveBaseName = 'moud-trove-bridge'
+    archiveBaseName = 'moud-pvp-bridge'
     archiveVersion = project.version
     
     from {

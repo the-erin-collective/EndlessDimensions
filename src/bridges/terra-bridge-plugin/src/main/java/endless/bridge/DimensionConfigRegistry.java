@@ -14,11 +14,11 @@ public interface DimensionConfigRegistry {
     DimensionConfig get(String dimensionId);
 
     /**
-     * Get the configuration for a specific dimension by ID
-     * @param dimensionId The dimension identifier
+     * Get the configuration for a specific dimension by NamespaceID
+     * @param dimensionId The dimension NamespaceID
      * @return The dimension configuration, or null if not found
      */
-    DimensionConfig get(Object dimensionId);
+    DimensionConfig get(net.minestom.server.utils.NamespaceID dimensionId);
 
     /**
      * Check if a dimension configuration exists

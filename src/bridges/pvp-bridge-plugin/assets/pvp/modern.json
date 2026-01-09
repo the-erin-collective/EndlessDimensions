@@ -1,0 +1,41 @@
+{
+  "version": "MODERN",
+  "difficulty": "NORMAL",
+  "features": [
+    "VANILLA_PLAYER_STATE",
+    "VANILLA_MELEE",
+    "VANILLA_BOW",
+    "VANILLA_FALL",
+    "VANILLA_ARMOR",
+    "VANILLA_EXPLOSIONS",
+    "VANILLA_POTION",
+    "VANILLA_FISHING",
+    "VANILLA_THORNS",
+    "VANILLA_SWEEP",
+    "VANILLA_FIRE",
+    "VANILLA_PROJECTILE",
+    "VANILLA_MAGIC",
+    "VANILLA_STARVATION",
+    "VANILLA_VOID",
+    "VANILLA_WITHER",
+    "VANILLA_LIGHTNING"
+  ],
+  "settings": {
+    "shieldDamage": true,
+    "criticalHits": true,
+    "sweepingEdge": true,
+    "fireAspect": true,
+    "knockback": true,
+    "thorns": true,
+    "projectileProtection": true,
+    "blastProtection": true,
+    "fireProtection": true,
+    "fallDamage": true,
+    "voidDamage": true,
+    "drowningDamage": true,
+    "starvationDamage": true,
+    "poisonDamage": true,
+    "witherDamage": true,
+    "lightningDamage": true
+  }
+}

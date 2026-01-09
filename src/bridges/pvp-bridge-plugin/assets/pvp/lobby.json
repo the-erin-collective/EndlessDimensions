@@ -1,0 +1,25 @@
+{
+  "version": "LOBBY",
+  "difficulty": "PEACEFUL",
+  "features": [
+    "VANILLA_PLAYER_STATE"
+  ],
+  "settings": {
+    "shieldDamage": false,
+    "criticalHits": false,
+    "sweepingEdge": false,
+    "fireAspect": false,
+    "knockback": false,
+    "thorns": false,
+    "projectileProtection": false,
+    "blastProtection": false,
+    "fireProtection": false,
+    "fallDamage": false,
+    "voidDamage": false,
+    "drowningDamage": false,
+    "starvationDamage": false,
+    "poisonDamage": false,
+    "witherDamage": false,
+    "lightningDamage": false
+  }
+}

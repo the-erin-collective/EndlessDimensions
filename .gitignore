@@ -51,3 +51,5 @@ config/
 /src/bridges/terra-bridge-plugin/.gradle
 /terra-bridge-plugin/.gradle
 /terra-bridge-plugin/.gradle
+/src/bridges/pvp-bridge-plugin/.gradle
+/src/bridges/trove-bridge-plugin/.gradle

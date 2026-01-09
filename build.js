@@ -20,6 +20,12 @@ class Builder {
             // Build Polar bridge plugin
             await this.buildPolarPlugin();
 
+            // Build Trove bridge plugin
+            await this.buildTrovePlugin();
+
+            // Build PvP bridge plugin
+            await this.buildPvPPlugin();
+
             // Clean previous builds
             await this.clean();
 
@@ -121,6 +127,76 @@ class Builder {
         }
     }
 
+    async buildTrovePlugin() {
+        console.log('💎 Building Trove bridge plugin...');
+        
+        const trovePluginDir = path.join(__dirname, 'src', 'bridges', 'trove-bridge-plugin');
+        
+        if (!fs.existsSync(trovePluginDir)) {
+            console.log('  ⚠ Trove bridge plugin directory not found, skipping...');
+            return;
+        }
+        
+        try {
+            // Check if Gradle wrapper exists
+            const gradlewWrapper = process.platform === 'win32' ? 'gradlew.bat' : './gradlew';
+            const gradlewPath = path.join(trovePluginDir, gradlewWrapper);
+            
+            if (!fs.existsSync(gradlewPath)) {
+                console.log('  ⚠ Gradle wrapper not found for Trove, skipping...');
+                return;
+            }
+            
+            // Build the Trove bridge plugin
+            console.log('  📦 Building Trove bridge plugin with Gradle...');
+            execSync(gradlewWrapper + ' shadowJar', {
+                cwd: trovePluginDir,
+                stdio: 'inherit'
+            });
+            
+            console.log('  ✅ Trove bridge plugin built successfully');
+            
+        } catch (error) {
+            console.warn('  ⚠ Trove bridge plugin build failed:', error.message);
+            console.log('  💡 Run manually: cd src/bridges/trove-bridge-plugin && ./gradlew shadowJar');
+        }
+    }
+
+    async buildPvPPlugin() {
+        console.log('⚔️ Building PvP bridge plugin...');
+        
+        const pvpPluginDir = path.join(__dirname, 'src', 'bridges', 'pvp-bridge-plugin');
+        
+        if (!fs.existsSync(pvpPluginDir)) {
+            console.log('  ⚠ PvP bridge plugin directory not found, skipping...');
+            return;
+        }
+        
+        try {
+            // Check if Gradle wrapper exists
+            const gradlewWrapper = process.platform === 'win32' ? 'gradlew.bat' : './gradlew';
+            const gradlewPath = path.join(pvpPluginDir, gradlewWrapper);
+            
+            if (!fs.existsSync(gradlewPath)) {
+                console.log('  ⚠ Gradle wrapper not found for PvP, skipping...');
+                return;
+            }
+            
+            // Build the PvP bridge plugin
+            console.log('  📦 Building PvP bridge plugin with Gradle...');
+            execSync(gradlewWrapper + ' shadowJar', {
+                cwd: pvpPluginDir,
+                stdio: 'inherit'
+            });
+            
+            console.log('  ✅ PvP bridge plugin built successfully');
+            
+        } catch (error) {
+            console.warn('  ⚠ PvP bridge plugin build failed:', error.message);
+            console.log('  💡 Run manually: cd src/bridges/pvp-bridge-plugin && ./gradlew shadowJar');
+        }
+    }
+
     async clean() {
         console.log('🧹 Cleaning previous builds...');
 
@@ -211,6 +287,44 @@ class Builder {
                         path.join(pluginsDir, jar)
                     );
                     console.log(`  ✓ Copied Terra bridge plugin ${jar} to plugins/`);
+                }
+            }
+        }
+
+        // Copy Trove bridge plugin to plugins folder
+        const troveBuildDir = path.join(__dirname, 'src', 'bridges', 'trove-bridge-plugin', 'build', 'libs');
+        if (fs.existsSync(troveBuildDir)) {
+            const pluginsDir = path.join(this.buildDir, 'plugins');
+            fs.mkdirSync(pluginsDir, { recursive: true });
+
+            const troveJars = fs.readdirSync(troveBuildDir);
+            for (const jar of troveJars) {
+                if (jar.startsWith('moud-trove-bridge') && jar.endsWith('.jar') && 
+                    !jar.includes('-sources.jar') && !jar.includes('-javadoc.jar')) {
+                    fs.copyFileSync(
+                        path.join(troveBuildDir, jar),
+                        path.join(pluginsDir, jar)
+                    );
+                    console.log(`  ✓ Copied Trove bridge plugin ${jar} to plugins/`);
+                }
+            }
+        }
+
+        // Copy PvP bridge plugin to plugins folder
+        const pvpBuildDir = path.join(__dirname, 'src', 'bridges', 'pvp-bridge-plugin', 'build', 'libs');
+        if (fs.existsSync(pvpBuildDir)) {
+            const pluginsDir = path.join(this.buildDir, 'plugins');
+            fs.mkdirSync(pluginsDir, { recursive: true });
+
+            const pvpJars = fs.readdirSync(pvpBuildDir);
+            for (const jar of pvpJars) {
+                if (jar.startsWith('moud-pvp-bridge') && jar.endsWith('.jar') && 
+                    !jar.includes('-sources.jar') && !jar.includes('-javadoc.jar')) {
+                    fs.copyFileSync(
+                        path.join(pvpBuildDir, jar),
+                        path.join(pluginsDir, jar)
+                    );
+                    console.log(`  ✓ Copied PvP bridge plugin ${jar} to plugins/`);
                 }
             }
         }

@@ -30,7 +30,7 @@ public class BridgeRegistry {
      * @param config The dimension configuration for this instance
      */
     public void attachAll(
-        Object instance,
+        InstanceContainer instance,
         DimensionConfig config
     ) {
         for (Bridge bridge : bridges) {

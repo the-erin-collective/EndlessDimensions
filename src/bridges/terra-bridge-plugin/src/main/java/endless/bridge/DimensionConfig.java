@@ -1,26 +1,29 @@
 package endless.bridge;
 
+import net.minestom.server.utils.NamespaceID;
+import org.jetbrains.annotations.Nullable;
+
 /**
  * Configuration data for a dimension.
  * This record represents the runtime model for dimension configuration.
  */
 public record DimensionConfig(
-    Object id,
-    Object lootTable,
+    NamespaceID id,
+    @Nullable NamespaceID lootTable,
     Object worldgen,
-    String combatProfile
+    @Nullable String combatProfile
 ) {
     /**
      * Create a dimension config without a loot table
      */
-    public DimensionConfig(Object id, Object worldgen) {
+    public DimensionConfig(NamespaceID id, Object worldgen) {
         this(id, null, worldgen, null);
     }
 
     /**
      * Create a dimension config with loot table but no combat profile
      */
-    public DimensionConfig(Object id, Object lootTable, Object worldgen) {
+    public DimensionConfig(NamespaceID id, @Nullable NamespaceID lootTable, Object worldgen) {
         this(id, lootTable, worldgen, null);
     }
 
