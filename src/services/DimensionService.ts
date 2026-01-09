@@ -201,37 +201,71 @@ export class DimensionService {
     }
 
     private applyPersistence(instance: any): void {
-        const getJava = () => {
-            const candidates = [
-                (globalThis as any).Java,
-                (globalThis as any).moud?.java,
-                (globalThis as any).moud?.native,
-                (this.api as any).internal?.java,
-                (globalThis as any).require ? (globalThis as any).require('native') : null,
-                (globalThis as any).require ? (globalThis as any).require('moud') : null
-            ];
-            for (const c of candidates) {
-                if (c && (typeof c.type === 'function' || typeof c.getClass === 'function' || typeof c.getNativeClass === 'function')) return c;
+        // Check if Polar bridge plugin is available first
+        if (typeof (globalThis as any).Polar !== 'undefined') {
+            console.log('[DimensionService] Using Polar bridge plugin for persistence...');
+            
+            try {
+                // Generate a path based on instance ID or unique identifier
+                const id = instance.getUniqueId ? instance.getUniqueId() : Date.now().toString();
+                const dimensionId = `dimension_${id}`;
+                const polarFile = `${id}.polar`;
+                
+                // Load Polar world using bridge plugin
+                (globalThis as any).Polar.load(dimensionId, polarFile)
+                    .then(result => {
+                        if (result.isSuccess()) {
+                            console.log(`[DimensionService] Polar world loaded: ${dimensionId}`);
+                        } else {
+                            console.warn(`[DimensionService] Failed to load Polar world: ${result.getMessage()}`);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('[DimensionService] Error loading Polar world:', error);
+                    });
+                
+                console.log(`[DimensionService] Polar persistence applied to instance: ${dimensionId}`);
+                
+            } catch (error) {
+                console.error('[DimensionService] Failed to apply Polar persistence:', error);
             }
-            return undefined;
-        };
-        const java = getJava();
+            
+        } else {
+            console.log('[DimensionService] Polar bridge plugin not available, falling back to direct Java interop...');
+            
+            // Fallback to direct Java interop method
+            const getJava = () => {
+                const candidates = [
+                    (globalThis as any).Java,
+                    (globalThis as any).moud?.java,
+                    (globalThis as any).moud?.native,
+                    (this.api as any).internal?.java,
+                    (globalThis as any).require ? (globalThis as any).require('native') : null,
+                    (globalThis as any).require ? (globalThis as any).require('moud') : null
+                ];
+                for (const c of candidates) {
+                    if (c && (typeof c.type === 'function' || typeof c.getClass === 'function' || typeof c.getNativeClass === 'function')) return c;
+                }
+                return undefined;
+            };
+            const java = getJava();
 
-        if (!java) return;
-        try {
-            const PolarLoader = java.type('com.hollowcube.polar.PolarLoader');
-            const Paths = java.type('java.nio.file.Paths');
+            if (!java) return;
+            try {
+                const PolarLoader = java.type('com.hollowcube.polar.PolarLoader');
+                const Paths = java.type('java.nio.file.Paths');
 
-            // Generate a path based on instance ID or unique identifier
-            // For now, using a simple naming convention
-            const id = instance.getUniqueId ? instance.getUniqueId() : Date.now().toString();
-            const polarPath = Paths.get(`worlds/${id}.polar`);
+                // Generate a path based on instance ID or unique identifier
+                // For now, using a simple naming convention
+                const id = instance.getUniqueId ? instance.getUniqueId() : Date.now().toString();
+                const polarPath = Paths.get(`worlds/${id}.polar`);
 
-            const polarLoader = new PolarLoader(polarPath);
-            instance.setChunkLoader(polarLoader);
-            console.log(`[DimensionService] Polar persistence applied to instance.`);
-        } catch (e) {
-            console.error('[DimensionService] Failed to apply Polar:', e);
+                const polarLoader = new PolarLoader(polarPath);
+                instance.setChunkLoader(polarLoader);
+                console.log(`[DimensionService] Polar persistence applied to instance.`);
+            } catch (e) {
+                console.error('[DimensionService] Failed to apply Polar:', e);
+            }
         }
     }
 

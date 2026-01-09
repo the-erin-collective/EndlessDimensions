@@ -142,6 +142,19 @@ async function postBuild() {
         console.log('  ⚠ Terra bridge plugin not built. Run: cd terra-bridge-plugin && ./gradlew shadowJar');
     }
 
+    // Copy Polar bridge plugin if built
+    const polarPluginPath = path.join(__dirname, 'polar-bridge-plugin', 'build', 'libs', 'moud-polar-bridge-1.0.0-BETA.jar');
+    if (fs.existsSync(polarPluginPath)) {
+        const pluginsDir = path.join(tempDir, 'plugins');
+        if (!fs.existsSync(pluginsDir)) {
+            fs.mkdirSync(pluginsDir, { recursive: true });
+        }
+        fs.copyFileSync(polarPluginPath, path.join(pluginsDir, 'moud-polar-bridge-1.0.0-BETA.jar'));
+        console.log('  ✓ Included Polar bridge plugin moud-polar-bridge-1.0.0-BETA.jar in plugins/');
+    } else {
+        console.log('  ⚠ Polar bridge plugin not built. Run: cd polar-bridge-plugin && ./gradlew shadowJar');
+    }
+
     // Update launcher scripts to use current directory as project root
     console.log('Updating launcher scripts...');
     const runBatPath = path.join(tempDir, 'run.bat');

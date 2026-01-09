@@ -17,6 +17,9 @@ class Builder {
             // Build Terra bridge plugin first
             await this.buildTerraPlugin();
 
+            // Build Polar bridge plugin
+            await this.buildPolarPlugin();
+
             // Clean previous builds
             await this.clean();
 
@@ -70,6 +73,43 @@ class Builder {
         } catch (error) {
             console.warn('  ⚠ Terra bridge plugin build failed:', error.message);
             console.log('  💡 Run manually: cd terra-bridge-plugin && ./gradlew shadowJar');
+        }
+    }
+
+    async buildPolarPlugin() {
+        console.log('🧊 Building Polar bridge plugin...');
+        
+        const polarPluginDir = path.join(__dirname, 'polar-bridge-plugin');
+        
+        if (!fs.existsSync(polarPluginDir)) {
+            console.log('  ⚠ Polar bridge plugin directory not found, skipping...');
+            return;
+        }
+        
+        try {
+            // Build the Polar bridge plugin using Gradle
+            console.log('  📦 Building Polar bridge plugin with Gradle...');
+            execSync('./gradlew shadowJar', { cwd: polarPluginDir, stdio: 'inherit' });
+            
+            // Copy the built JAR to the plugins directory
+            const polarJarPath = path.join(polarPluginDir, 'build', 'libs', 'moud-polar-bridge-1.0.0-BETA.jar');
+            const pluginsDir = path.join(this.buildDir, 'plugins');
+            
+            // Ensure plugins directory exists
+            if (!fs.existsSync(pluginsDir)) {
+                fs.mkdirSync(pluginsDir, { recursive: true });
+            }
+            
+            if (fs.existsSync(polarJarPath)) {
+                fs.copyFileSync(polarJarPath, path.join(pluginsDir, 'moud-polar-bridge-1.0.0-BETA.jar'));
+                console.log('  ✅ Polar bridge plugin built and copied successfully');
+            } else {
+                console.log('  ⚠ Polar bridge plugin JAR not found, skipping...');
+            }
+            
+        } catch (error) {
+            console.error('  ❌ Failed to build Polar bridge plugin:', error.message);
+            console.log('  ⚠ Continuing build without Polar bridge plugin...');
         }
     }
 

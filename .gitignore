@@ -47,3 +47,4 @@ config/
 /dist
 /libs
 /.moud
+/polar-bridge-plugin/.gradle

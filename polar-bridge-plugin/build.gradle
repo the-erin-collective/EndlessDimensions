@@ -1,0 +1,93 @@
+plugins {
+    id 'java'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
+}
+
+group = 'com.moud.polar'
+version = '1.0.0-BETA'
+description = 'Polar Bridge Plugin for Moud - TypeScript-friendly Polar world format integration'
+
+repositories {
+    mavenCentral()
+    maven { url 'https://repo.hollowcube.dev/releases' }
+    maven { url 'https://jitpack.io' }
+    maven { url 'https://repo1.maven.org/maven2/' }
+    maven { url 'https://plugins.gradle.org/m2/' }
+    maven { url 'https://repo.gradle.org/gradle/libs-releases' }
+    maven { url 'https://repo1.maven.org/maven2/org/graalvm/' }
+}
+
+dependencies {
+    // Polar dependency - try a version compatible with Java 21
+    implementation 'dev.hollowcube:polar:1.14.0'
+    
+    // SLF4J logging - use version compatible with Java 21
+    implementation 'org.slf4j:slf4j-api:1.7.36'
+    
+    // Testing
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.0'
+    testImplementation 'org.mockito:mockito-core:5.5.0'
+    testImplementation 'org.mockito:mockito-junit-jupiter:5.5.0'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = 21
+}
+
+test {
+    useJUnitPlatform()
+    testLogging {
+        events "passed", "skipped", "failed"
+    }
+}
+
+// Shadow JAR configuration
+shadowJar {
+    archiveClassifier.set('')
+    archiveBaseName.set('moud-polar-bridge')
+    
+    // Relocate dependencies to avoid conflicts
+    relocate 'dev.hollowcube.polar', 'com.moud.polar.libs.polar'
+    relocate 'org.slf4j', 'com.moud.polar.libs.slf4j'
+    
+    // Exclude unnecessary files
+    exclude 'META-INF/*.SF'
+    exclude 'META-INF/*.DSA'
+    exclude 'META-INF/*.RSA'
+    exclude 'module-info.class'
+    
+    // Merge service files
+    mergeServiceFiles()
+    
+    manifest {
+        attributes(
+            'Main-Class': 'com.moud.polar.SimplePolarBridgePlugin',
+            'Implementation-Title': 'Polar Bridge Plugin',
+            'Implementation-Version': project.version,
+            'Implementation-Vendor': 'Moud Team',
+            'Built-By': 'Gradle',
+            'Built-Date': new Date().format('yyyy-MM-dd HH:mm:ss'),
+            'Plugin-Name': 'polar-bridge',
+            'Plugin-Version': project.version,
+            'Plugin-Author': 'Moud Team',
+            'Plugin-Description': 'TypeScript-friendly Polar world format integration for Moud'
+        )
+    }
+}
+
+// Build tasks
+build.dependsOn shadowJar
+assemble.dependsOn shadowJar
+
+// Clean task
+clean {
+    delete 'build'
+    delete 'out'
+}

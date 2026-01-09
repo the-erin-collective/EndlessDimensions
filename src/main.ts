@@ -25,6 +25,9 @@ import { getParticleSystem } from './enhanced/ParticleSystem';
 // Import Terra Bridge example
 import { demonstrateTerraBridge } from './examples/TerraBridgeExample';
 
+// Import Polar Bridge example
+import { demonstratePolarBridge } from './examples/PolarBridgeExample';
+
 // Helper to log all available keys on the API object
 export const debugGlobalScope = () => {
     try {
@@ -275,6 +278,9 @@ api.on('server.load', async () => {
 
         // Step 7: Demonstrate Terra Bridge Plugin usage
         await demonstrateTerraBridge();
+
+        // Step 8: Demonstrate Polar Bridge Plugin usage
+        await demonstratePolarBridge();
 
         console.log(`[MAIN] Endless Dimensions Mod v${MOD_VERSION} initialization complete!`);
     } catch (error) {
