@@ -136,7 +136,8 @@ public class PvPBridge implements InstanceAttachableBridge, DimensionScopedBridg
         try {
             // Initialize actual MinestomPvP library
             // This is "Second Handshake" that activates MinestomPvP functionality
-            io.github.togar2.MinestomPvP.MinestomPvP.init(
+            // Note: Using version 2025.12.29-1.21.11 which is compatible with Java 25
+            io.github.togar2.pvp.MinestomPvP.init(
                 /* customPlayer */ true,
                 /* keepAlive */ true
             );

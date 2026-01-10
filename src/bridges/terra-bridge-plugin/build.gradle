@@ -1,6 +1,18 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        // This forces Gradle build environment to use a compatible ASM version
+        classpath 'org.ow2.asm:asm:9.7'
+        classpath 'org.ow2.asm:asm-commons:9.7'
+    }
+}
+
 plugins {
     id 'java'
-    id 'com.gradleup.shadow' version '8.3.0'
+    id 'java-library'
+    id 'com.gradleup.shadow' version '9.3.1'
 }
 
 group = 'com.moud.terra'
