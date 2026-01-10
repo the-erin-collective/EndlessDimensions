@@ -2,19 +2,18 @@ package com.moud.trove;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import net.minestom.server.extensions.Extension;
 
 /**
- * Simple Trove Bridge Extension that doesn't depend on minestom-ce-extensions API
- * This will be loaded by custom extension system
+ * Trove Bridge Extension for minestom-ce-extensions
+ * This will be automatically discovered and loaded by minestom-ce-extensions
  */
-public class TroveBridgeExtension {
+public class TroveBridgeExtension extends Extension {
     
     private static final Logger logger = LoggerFactory.getLogger(TroveBridgeExtension.class);
     private TroveBridgePlugin bridgePlugin;
     
-    /**
-     * Initialize the extension
-     */
+    @Override
     public void initialize() {
         logger.info("[TroveBridgeExtension] Initializing Trove bridge extension...");
         
@@ -30,9 +29,7 @@ public class TroveBridgeExtension {
         }
     }
     
-    /**
-     * Terminate the extension
-     */
+    @Override
     public void terminate() {
         logger.info("[TroveBridgeExtension] Terminating Trove bridge extension...");
         

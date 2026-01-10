@@ -25,6 +25,14 @@ repositories {
 }
 
 dependencies {
+    // Minestom CE Extensions - for proper extension loading
+    implementation('dev.hollowcube:minestom-ce-extensions:1.2.0') {
+        exclude group: 'com.github.Minestom', module: 'DependencyGetter'
+    }
+    
+    // Kotlin standard library for DependencyGetter
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib:1.9.10'
+    
     // Core Terra dependency (includes Minestom transitively)
     implementation 'com.dfsek.terra:minestom:6.6.0-BETA+810d10ac0'
     

@@ -171,7 +171,7 @@ export class BridgePluginManager {
             // Check if Minestom extension manager is available
             if ((globalThis as any).Java && (globalThis as any).Java.type) {
                 try {
-                    const ExtensionManager = (globalThis as any).Java.type('net.minestom.server.extensions.ExtensionManager');
+                    const ExtensionManager = (globalThis as any).Java.type('dev.hollowcube.minestom.extensions.ExtensionManager');
                     if (ExtensionManager) {
                         console.log('[BridgePluginManager] Minestom ExtensionManager is available');
                         break;

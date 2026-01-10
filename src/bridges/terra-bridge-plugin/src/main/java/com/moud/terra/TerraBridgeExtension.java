@@ -2,19 +2,18 @@ package com.moud.terra;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import net.minestom.server.extensions.Extension;
 
 /**
- * Simple Terra Bridge Extension that doesn't depend on minestom-ce-extensions API
- * This will be loaded by custom extension system
+ * Terra Bridge Extension for minestom-ce-extensions
+ * This will be automatically discovered and loaded by minestom-ce-extensions
  */
-public class TerraBridgeExtension {
+public class TerraBridgeExtension extends Extension {
     
     private static final Logger logger = LoggerFactory.getLogger(TerraBridgeExtension.class);
     private TerraBridgePlugin bridgePlugin;
     
-    /**
-     * Initialize the extension
-     */
+    @Override
     public void initialize() {
         logger.info("[TerraBridgeExtension] Initializing Terra bridge extension...");
         
@@ -30,9 +29,7 @@ public class TerraBridgeExtension {
         }
     }
     
-    /**
-     * Terminate the extension
-     */
+    @Override
     public void terminate() {
         logger.info("[TerraBridgeExtension] Terminating Terra bridge extension...");
         

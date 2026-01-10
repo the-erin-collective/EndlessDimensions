@@ -20,6 +20,12 @@ repositories {
 }
 
 dependencies {
+    // Minestom CE Extensions - for proper extension loading
+    implementation 'dev.hollowcube:minestom-ce-extensions:1.2.0'
+    
+    // Kotlin standard library for DependencyGetter
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib:1.9.10'
+    
     // Polar dependency - try a version compatible with Java 21
     implementation 'dev.hollowcube:polar:1.14.6'
     

@@ -2,19 +2,18 @@ package com.moud.polar;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import net.minestom.server.extensions.Extension;
 
 /**
- * Simple Polar Bridge Extension that doesn't depend on minestom-ce-extensions API
- * This will be loaded by the custom extension system
+ * Polar Bridge Extension for minestom-ce-extensions
+ * This will be automatically discovered and loaded by minestom-ce-extensions
  */
-public class PolarBridgeExtension {
+public class PolarBridgeExtension extends Extension {
     
     private static final Logger logger = LoggerFactory.getLogger(PolarBridgeExtension.class);
     private PolarBridgePlugin bridgePlugin;
     
-    /**
-     * Initialize the extension
-     */
+    @Override
     public void initialize() {
         logger.info("[PolarBridgeExtension] Initializing Polar bridge extension...");
         
@@ -30,9 +29,7 @@ public class PolarBridgeExtension {
         }
     }
     
-    /**
-     * Terminate the extension
-     */
+    @Override
     public void terminate() {
         logger.info("[PolarBridgeExtension] Terminating Polar bridge extension...");
         

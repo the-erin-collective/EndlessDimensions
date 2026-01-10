@@ -2,19 +2,18 @@ package com.moud.pvp;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import net.minestom.server.extensions.Extension;
 
 /**
- * Simple PvP Bridge Extension that doesn't depend on minestom-ce-extensions API
- * This will be loaded by custom extension system
+ * PvP Bridge Extension for minestom-ce-extensions
+ * This will be automatically discovered and loaded by minestom-ce-extensions
  */
-public class PvPBridgeExtension {
+public class PvPBridgeExtension extends Extension {
     
     private static final Logger logger = LoggerFactory.getLogger(PvPBridgeExtension.class);
     private PvPBridgePlugin bridgePlugin;
     
-    /**
-     * Initialize the extension
-     */
+    @Override
     public void initialize() {
         logger.info("[PvPBridgeExtension] Initializing PvP bridge extension...");
         
@@ -30,9 +29,7 @@ public class PvPBridgeExtension {
         }
     }
     
-    /**
-     * Terminate the extension
-     */
+    @Override
     public void terminate() {
         logger.info("[PvPBridgeExtension] Terminating PvP bridge extension...");
         

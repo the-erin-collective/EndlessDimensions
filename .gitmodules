@@ -1,0 +1,3 @@
+[submodule "libs/MinestomPvP"]
+	path = libs/MinestomPvP
+	url = https://github.com/TogAr2/MinestomPvP.git
