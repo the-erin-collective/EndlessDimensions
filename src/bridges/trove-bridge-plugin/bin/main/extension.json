@@ -1,0 +1,12 @@
+{
+  "name": "Trove",
+  "version": "1.0.0-BETA",
+  "entrypoint": "com.moud.trove.TroveBridgeExtension",
+  "description": "Trove loot table bridge for Moud's TypeScript runtime",
+  "authors": [
+    "Moud Team"
+  ],
+  "dependencies": [],
+  "minestom": ">=1.20.1",
+  "environment": "server"
+}

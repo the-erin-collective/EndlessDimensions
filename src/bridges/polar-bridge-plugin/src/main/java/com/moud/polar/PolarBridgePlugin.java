@@ -1,5 +1,6 @@
 package com.moud.polar;
 
+import endless.bridge.registry.BridgeRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -7,7 +8,7 @@ import org.slf4j.LoggerFactory;
  * Polar Bridge Plugin for Moud
  * Exposes Polar world format capabilities to Moud's TypeScript runtime.
  * 
- * Self-registers via static initializer for Moud discovery.
+ * Self-registers via static initializer for Moud discovery using shared StaticBridgeRegistry.
  */
 public class PolarBridgePlugin {
     
@@ -21,14 +22,14 @@ public class PolarBridgePlugin {
             polarFacade = new PolarFacade();
             BridgeRegistry.register("Polar", polarFacade);
             initialized = true;
-            logger.info("[PolarBridgePlugin] Polar facade registered in BridgeRegistry");
+            logger.info("[PolarBridgePlugin] Polar facade registered in unified BridgeRegistry");
         } catch (Exception e) {
             logger.error("[PolarBridgePlugin] Failed to register Polar facade", e);
         }
     }
     
     public void initialize(Object context) {
-        logger.info("[PolarBridgePlugin] Initialize called - facade already in BridgeRegistry");
+        logger.info("[PolarBridgePlugin] Initialize called - facade already in unified BridgeRegistry");
     }
     
     public void shutdown() {

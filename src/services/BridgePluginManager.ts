@@ -73,147 +73,197 @@ export class BridgePluginManager {
      * Detect available plugins and load them
      */
     private async detectAndLoadPlugins(): Promise<void> {
-        console.log('[BridgePluginManager] Starting plugin detection...');
+        console.log('[BridgePluginManager] Starting plugin detection for minestom-ce-extensions...');
 
-        // Check for each bridge plugin - first in global scope, then in Java BridgeRegistry
-        const bridgePlugins = [
-            { name: 'Terra', globalName: 'Terra', registryClass: 'com.moud.terra.BridgeRegistry' },
-            { name: 'Polar', globalName: 'Polar', registryClass: 'com.moud.polar.BridgeRegistry' },
-            { name: 'Trove', globalName: 'Trove', registryClass: 'com.moud.trove.BridgeRegistry' },
-            { name: 'PvP', globalName: 'PvP', registryClass: 'com.moud.pvp.BridgeRegistry' }
+        // Check for each bridge extension - extensions are now loaded by Minestom's extension system
+        const bridgeExtensions = [
+            { name: 'Terra', globalName: 'Terra', extensionName: 'Terra' },
+            { name: 'Polar', globalName: 'Polar', extensionName: 'Polar' },
+            { name: 'Trove', globalName: 'Trove', extensionName: 'Trove' },
+            { name: 'PvP', globalName: 'PvP', extensionName: 'PvP' }
         ];
 
+        // Wait for Minestom extensions to be loaded
+        await this.waitForMinestomExtensions();
+
         // Try to inject from Java registries into global scope
-        await this.injectFromJavaRegistries(bridgePlugins);
+        await this.injectFromJavaRegistries(bridgeExtensions);
 
         // Create check functions
-        const pluginsWithCheck = bridgePlugins.map(plugin => ({
-            ...plugin,
-            check: () => typeof (globalThis as any)[plugin.globalName] !== 'undefined'
+        const extensionsWithCheck = bridgeExtensions.map(extension => ({
+            ...extension,
+            check: () => typeof (globalThis as any)[extension.globalName] !== 'undefined'
         }));
 
         // Log what's currently available
         console.log('[BridgePluginManager] Current global scope check:');
-        pluginsWithCheck.forEach(plugin => {
-            const available = plugin.check();
-            console.log(`[BridgePluginManager] ${plugin.name}: ${available ? '✓ Available' : '✗ Missing'}`);
+        extensionsWithCheck.forEach(extension => {
+            const available = extension.check();
+            console.log(`[BridgePluginManager] ${extension.name}: ${available ? '✓ Available' : '✗ Missing'}`);
         });
 
-        // Wait for plugins to be available
-        await this.waitForPlugins(pluginsWithCheck);
+        // Wait for extensions to be available
+        await this.waitForExtensions(extensionsWithCheck);
 
-        // Load available plugins
-        for (const plugin of pluginsWithCheck) {
-            if (plugin.check()) {
-                console.log(`[BridgePluginManager] Loading ${plugin.name} bridge plugin...`);
-                await this.loadPlugin(plugin);
-                this.plugins.set(plugin.name, await this.getPluginInstance(plugin));
+        // Load available extensions
+        for (const extension of extensionsWithCheck) {
+            if (extension.check()) {
+                console.log(`[BridgePluginManager] Loading ${extension.name} bridge extension...`);
+                await this.loadExtension(extension);
+                this.plugins.set(extension.name, await this.getExtensionInstance(extension));
             } else {
-                console.log(`[BridgePluginManager] ${plugin.name} bridge plugin not available`);
+                console.log(`[BridgePluginManager] ${extension.name} bridge extension not available`);
             }
         }
 
-        console.log(`[BridgePluginManager] Plugin loading complete. Loaded ${this.plugins.size} plugins.`);
+        console.log(`[BridgePluginManager] Extension loading complete. Loaded ${this.plugins.size} extensions.`);
     }
 
     /**
      * Try to inject bridge facades from Java BridgeRegistry into global scope
      */
-    private async injectFromJavaRegistries(plugins: Array<{ name: string, globalName: string, registryClass: string }>): Promise<void> {
+    private async injectFromJavaRegistries(extensions: Array<{ name: string, globalName: string, extensionName: string }>): Promise<void> {
         console.log('[BridgePluginManager] Attempting to inject facades from Java BridgeRegistry...');
 
-        for (const plugin of plugins) {
+        for (const extension of extensions) {
             try {
                 // Skip if already in global scope
-                if (typeof (globalThis as any)[plugin.globalName] !== 'undefined') {
-                    console.log(`[BridgePluginManager] ${plugin.name} already in global scope`);
+                if (typeof (globalThis as any)[extension.globalName] !== 'undefined') {
+                    console.log(`[BridgePluginManager] ${extension.name} already in global scope`);
                     continue;
                 }
 
                 // Try to get from Java BridgeRegistry using Java.type
                 if (typeof (globalThis as any).Java !== 'undefined' && (globalThis as any).Java.type) {
                     try {
-                        const RegistryClass = (globalThis as any).Java.type(plugin.registryClass);
-                        if (RegistryClass && RegistryClass.isRegistered(plugin.name)) {
-                            const facade = RegistryClass.get(plugin.name);
+                        const registryClass = (globalThis as any).Java.type('endless.bridge.registry.BridgeRegistry');
+                        if (registryClass && registryClass.isRegistered(extension.name)) {
+                            const facade = registryClass.get(extension.name);
                             if (facade) {
-                                (globalThis as any)[plugin.globalName] = facade;
-                                console.log(`[BridgePluginManager] ✓ Injected ${plugin.name} from Java BridgeRegistry`);
+                                (globalThis as any)[extension.globalName] = facade;
+                                console.log(`[BridgePluginManager] ✓ Injected ${extension.name} from unified BridgeRegistry`);
                             }
                         }
                     } catch (e: any) {
-                        console.log(`[BridgePluginManager] Could not access ${plugin.registryClass}: ${e.message || e}`);
+                        console.log(`[BridgePluginManager] Could not access endless.bridge.registry.BridgeRegistry: ${e.message || e}`);
                     }
                 }
             } catch (e: any) {
-                console.warn(`[BridgePluginManager] Error checking ${plugin.name} registry: ${e.message || e}`);
+                console.warn(`[BridgePluginManager] Error checking ${extension.name} registry: ${e.message || e}`);
             }
         }
     }
 
 
     /**
-     * Wait for plugins to become available
+     * Wait for Minestom extensions to be loaded
      */
-    public async waitForPlugins(plugins: Array<{ name: string, globalName: string, check: () => boolean }>): Promise<void> {
+    private async waitForMinestomExtensions(): Promise<void> {
+        console.log('[BridgePluginManager] Waiting for Minestom extensions to load...');
+        
+        // Wait for the extension system to be ready
+        const maxWaitTime = 15000; // 15 seconds max wait for extensions
+        const startTime = Date.now();
+        
+        while (Date.now() - startTime < maxWaitTime) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // Check if Minestom extension manager is available
+            if ((globalThis as any).Java && (globalThis as any).Java.type) {
+                try {
+                    const ExtensionManager = (globalThis as any).Java.type('net.minestom.server.extensions.ExtensionManager');
+                    if (ExtensionManager) {
+                        console.log('[BridgePluginManager] Minestom ExtensionManager is available');
+                        break;
+                    }
+                } catch (e) {
+                    // ExtensionManager not yet available
+                }
+            }
+        }
+        
+        // Give extensions an additional moment to initialize
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        console.log('[BridgePluginManager] Proceeding with extension detection...');
+    }
+
+    /**
+     * Wait for extensions to become available
+     */
+    public async waitForExtensions(extensions: Array<{ name: string, globalName: string, check: () => boolean }>): Promise<void> {
         const maxWaitTime = 10000; // 10 seconds max wait
         const startTime = Date.now();
 
-        console.log(`[BridgePluginManager] Waiting for plugins: ${plugins.map(p => p.name).join(', ')}`);
+        console.log(`[BridgePluginManager] Waiting for extensions: ${extensions.map(e => e.name).join(', ')}`);
 
         while (Date.now() - startTime < maxWaitTime) {
             await new Promise(resolve => setTimeout(resolve, 200));
 
-            // Check if all required plugins are available
-            const allAvailable = plugins.every(plugin => plugin.check());
+            // Check if all required extensions are available
+            const allAvailable = extensions.every(extension => extension.check());
             if (allAvailable) {
-                console.log('[BridgePluginManager] All required plugins are available');
+                console.log('[BridgePluginManager] All required extensions are available');
                 return;
             }
 
             // Log progress
-            const availablePlugins = plugins.filter(plugin => plugin.check()).map(p => p.name);
-            const missingPlugins = plugins.filter(plugin => !plugin.check()).map(p => p.name);
-            if (availablePlugins.length > 0) {
-                console.log(`[BridgePluginManager] Available: ${availablePlugins.join(', ')}, Missing: ${missingPlugins.join(', ')}`);
+            const availableExtensions = extensions.filter(extension => extension.check()).map(e => e.name);
+            const missingExtensions = extensions.filter(extension => !extension.check()).map(e => e.name);
+            if (availableExtensions.length > 0) {
+                console.log(`[BridgePluginManager] Available: ${availableExtensions.join(', ')}, Missing: ${missingExtensions.join(', ')}`);
             }
         }
 
         const waitTime = Date.now() - startTime;
         if (waitTime >= maxWaitTime) {
-            const missingPlugins = plugins.filter(plugin => !plugin.check()).map(p => p.name);
-            if (missingPlugins.length > 0) {
-                console.error(`[BridgePluginManager] Missing plugins after ${maxWaitTime}ms: ${missingPlugins.join(', ')}`);
-                throw new Error(`Required bridge plugins not available: ${missingPlugins.join(', ')}`);
+            const missingExtensions = extensions.filter(extension => !extension.check()).map(e => e.name);
+            if (missingExtensions.length > 0) {
+                console.error(`[BridgePluginManager] Missing extensions after ${maxWaitTime}ms: ${missingExtensions.join(', ')}`);
+                throw new Error(`Required bridge extensions not available: ${missingExtensions.join(', ')}`);
             }
         }
     }
 
     /**
-     * Load a specific plugin (placeholder - would be implemented by each bridge plugin)
+     * Load a specific extension (placeholder - would be implemented by each bridge extension)
      */
-    private async loadPlugin(plugin: { name: string, globalName: string, check: () => boolean }): Promise<any> {
-        // In a real implementation, this would load the actual plugin JAR
-        // For now, return a mock plugin instance
-        console.log(`[BridgePluginManager] Loaded ${plugin.name} plugin (mock implementation)`);
+    private async loadExtension(extension: { name: string, globalName: string, check: () => boolean }): Promise<any> {
+        // Extensions are now loaded by Minestom's extension system
+        // We just need to verify they're available and accessible
+        console.log(`[BridgePluginManager] Loaded ${extension.name} extension (via Minestom extension system)`);
         return {
-            name: plugin.name,
-            isLoaded: true
+            name: extension.name,
+            isLoaded: true,
+            isExtension: true
         };
     }
 
     /**
-     * Get plugin instance by name
+     * Get extension instance by name
      */
-    public getPlugin(name: string): any {
+    public getExtension(name: string): any {
         return this.plugins.get(name);
     }
 
     /**
-     * Get plugin instance (helper method)
+     * Get plugin instance by name (legacy compatibility)
+     */
+    public getPlugin(name: string): any {
+        return this.getExtension(name);
+    }
+
+    /**
+     * Get extension instance (helper method)
+     */
+    private async getExtensionInstance(extension: { name: string, globalName: string, check: () => boolean }): Promise<any> {
+        // Return the global extension instance
+        return (globalThis as any)[extension.globalName];
+    }
+
+    /**
+     * Get plugin instance (legacy compatibility)
      */
     private async getPluginInstance(plugin: { name: string, globalName: string, check: () => boolean }): Promise<any> {
-        // Return the global plugin instance
-        return (globalThis as any)[plugin.globalName];
+        return this.getExtensionInstance(plugin);
     }
 }

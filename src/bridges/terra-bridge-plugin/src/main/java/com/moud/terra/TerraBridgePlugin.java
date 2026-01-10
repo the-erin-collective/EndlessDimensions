@@ -1,5 +1,6 @@
 package com.moud.terra;
 
+import endless.bridge.registry.BridgeRegistry;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Value;
 import org.slf4j.Logger;
@@ -10,7 +11,7 @@ import org.slf4j.LoggerFactory;
  * Exposes Terra world generation engine to Moud's TypeScript runtime via GraalVM polyglot interoperability.
  * 
  * This plugin self-registers when the class is loaded, making the facade available
- * for Moud's JavaScript runtime to discover via the BridgeRegistry.
+ * for Moud's JavaScript runtime to discover via the shared StaticBridgeRegistry.
  */
 public class TerraBridgePlugin {
     
@@ -25,7 +26,7 @@ public class TerraBridgePlugin {
             terraFacade = new TerraFacade();
             BridgeRegistry.register("Terra", terraFacade);
             initialized = true;
-            logger.info("[TerraBridgePlugin] Terra facade registered in BridgeRegistry");
+            logger.info("[TerraBridgePlugin] Terra facade registered in unified BridgeRegistry");
         } catch (Exception e) {
             logger.error("[TerraBridgePlugin] Failed to register Terra facade", e);
         }
@@ -44,11 +45,11 @@ public class TerraBridgePlugin {
                 bindings.putMember("Terra", terraFacade);
                 logger.info("[TerraBridgePlugin] Successfully injected 'Terra' into JS global scope");
             } else {
-                logger.info("[TerraBridgePlugin] Context is not GraalVM Context, using BridgeRegistry fallback");
+                logger.info("[TerraBridgePlugin] Initialize called - facade already in unified BridgeRegistry");
             }
             
         } catch (Exception e) {
-            logger.warn("[TerraBridgePlugin] Could not inject directly, using BridgeRegistry: " + e.getMessage());
+            logger.warn("[TerraBridgePlugin] Could not inject directly, using unified BridgeRegistry: " + e.getMessage());
         }
     }
     

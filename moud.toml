@@ -16,11 +16,8 @@ hostAccess = true
 sandbox = false
 
 [plugins]
-# Bridge plugins to load from extensions/ directory
+# Bridge plugins are now loaded via minestom-ce-extensions system
+# Extensions should be placed in the extensions/ directory
 extensionsDir = "extensions"
-loadPlugins = [
-    "moud-terra-bridge-1.0.0-BETA.jar",
-    "moud-polar-bridge-1.0.0-BETA.jar",
-    "moud-trove-bridge-1.0.0-BETA.jar",
-    "moud-pvp-bridge-1.0.0-BETA.jar"
-]
+# The extension system will automatically discover and load extensions
+# No need to manually specify JAR files anymore

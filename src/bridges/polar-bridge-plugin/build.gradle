@@ -15,6 +15,7 @@ repositories {
     maven { url 'https://plugins.gradle.org/m2/' }
     maven { url 'https://repo.gradle.org/gradle/libs-releases' }
     maven { url 'https://repo1.maven.org/maven2/org/graalvm/' }
+    maven { url 'https://github.com/Minestom/DependencyGetter' }
 }
 
 dependencies {

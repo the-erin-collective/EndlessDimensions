@@ -1,0 +1,17 @@
+plugins {
+    id 'java'
+    id 'java-library'
+}
+
+group = 'endless.bridge'
+version = '1.0.0'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+jar {
+    archiveBaseName = 'bridge-registry'
+    archiveVersion = project.version
+}

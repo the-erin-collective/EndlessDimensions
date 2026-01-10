@@ -1,0 +1,12 @@
+{
+  "name": "PvP",
+  "version": "1.0.0-BETA",
+  "entrypoint": "com.moud.pvp.PvPBridgeExtension",
+  "description": "PvP functionality bridge for Moud's TypeScript runtime",
+  "authors": [
+    "Moud Team"
+  ],
+  "dependencies": [],
+  "minestom": ">=1.20.1",
+  "environment": "server"
+}

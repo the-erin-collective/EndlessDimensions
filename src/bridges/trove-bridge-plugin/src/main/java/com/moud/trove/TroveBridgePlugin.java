@@ -1,5 +1,6 @@
 package com.moud.trove;
 
+import endless.bridge.registry.BridgeRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,14 +23,14 @@ public class TroveBridgePlugin {
             troveFacade = new TroveFacade(troveBridge);
             BridgeRegistry.register("Trove", troveFacade);
             initialized = true;
-            logger.info("[TroveBridgePlugin] Trove facade registered in BridgeRegistry");
+            logger.info("[TroveBridgePlugin] Trove facade registered in unified BridgeRegistry");
         } catch (Exception e) {
             logger.error("[TroveBridgePlugin] Failed to register Trove facade", e);
         }
     }
     
     public void initialize(Object context) {
-        logger.info("[TroveBridgePlugin] Initialize called - facade already in BridgeRegistry");
+        logger.info("[TroveBridgePlugin] Initialize called - facade already in unified BridgeRegistry");
     }
     
     public void shutdown() {

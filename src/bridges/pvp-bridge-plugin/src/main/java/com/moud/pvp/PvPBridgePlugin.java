@@ -1,5 +1,6 @@
 package com.moud.pvp;
 
+import endless.bridge.registry.BridgeRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,14 +24,14 @@ public class PvPBridgePlugin {
             pvpFacade = new PvPFacade(pvpBridge);
             BridgeRegistry.register("PvP", pvpFacade);
             initialized = true;
-            logger.info("[PvPBridgePlugin] PvP facade registered in BridgeRegistry");
+            logger.info("[PvPBridgePlugin] PvP facade registered in unified BridgeRegistry");
         } catch (Exception e) {
             logger.error("[PvPBridgePlugin] Failed to register PvP facade", e);
         }
     }
     
     public void initialize(Object context) {
-        logger.info("[PvPBridgePlugin] Initialize called - facade already in BridgeRegistry");
+        logger.info("[PvPBridgePlugin] Initialize called - facade already in unified BridgeRegistry");
     }
     
     public void shutdown() {

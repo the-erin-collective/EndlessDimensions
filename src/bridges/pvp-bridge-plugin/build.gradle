@@ -19,6 +19,10 @@ dependencies {
     // JetBrains annotations for @Nullable
     implementation 'org.jetbrains:annotations:24.0.1'
     
+    // Force newer ASM version for Java 21 compatibility
+    implementation 'org.ow2.asm:asm:9.7'
+    implementation 'org.ow2.asm:asm-commons:9.7'
+    
     // GraalVM Polyglot (provided by Moud if available)
     compileOnly 'org.graalvm.sdk:graal-sdk:24.0.0'
     

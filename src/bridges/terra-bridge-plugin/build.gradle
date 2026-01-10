@@ -16,8 +16,9 @@ dependencies {
     // Core Terra dependency (includes Minestom transitively)
     implementation 'com.dfsek.terra:minestom:6.6.0-BETA+810d10ac0'
     
-    // JetBrains annotations for @Nullable
-    compileOnly 'org.jetbrains:annotations:24.0.0'
+    // Force newer ASM version for Java 21 compatibility
+    implementation 'org.ow2.asm:asm:9.7'
+    implementation 'org.ow2.asm:asm-commons:9.7'
     
     // GraalVM Polyglot (provided by Moud if available)
     compileOnly 'org.graalvm.sdk:graal-sdk:24.0.0'

@@ -6,9 +6,10 @@
   "moud:main": "src/main.ts",
   "scripts": {
     "build:ts": "tsc",
+    "build:extensions": "node build-extensions.js",
     "dev": "npm run build:ts && node run-moud.js dev",
     "dev:watch": "concurrently \"npx tsc --watch\" \"moud dev --watch\"",
-    "build": "tsc && moud pack && node post-build.js",
+    "build": "tsc && npm run build:extensions && moud pack && node post-build.js",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
