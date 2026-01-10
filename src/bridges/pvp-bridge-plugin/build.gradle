@@ -29,6 +29,9 @@ dependencies {
     // Minestom (provided by Moud runtime/Terra)
     compileOnly 'com.dfsek.terra:minestom:6.6.0-BETA+810d10ac0'
     
+    // MinestomPvP combat library
+    implementation 'io.github.togar2:MinestomPvP:2025.12.29-1.21.11'
+    
     // Logging
     implementation 'org.slf4j:slf4j-api:2.0.7'
     
@@ -38,8 +41,8 @@ dependencies {
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
 }
 
 test {

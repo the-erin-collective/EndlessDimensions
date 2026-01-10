@@ -31,6 +31,9 @@ dependencies {
     // Minestom (provided by Moud runtime/Terra)
     compileOnly 'com.dfsek.terra:minestom:6.6.0-BETA+810d10ac0'
     
+    // Trove loot table library
+    implementation 'net.goldenstack:trove:3.0'
+    
     // Logging
     implementation 'org.slf4j:slf4j-api:2.0.7'
     
@@ -40,8 +43,8 @@ dependencies {
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
 }
 
 test {
