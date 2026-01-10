@@ -1,0 +1,29 @@
+{
+    "id": "pvp-bridge",
+    "name": "PvP Bridge Plugin",
+    "version": "1.0.0-BETA",
+    "description": "Bridges PvP features with Moud's TypeScript runtime via GraalVM polyglot interoperability",
+    "author": "Moud-PvP Bridge Team",
+    "mainClass": "com.moud.pvp.PvPBridgePlugin",
+    "depends": [
+        "plugin-api"
+    ],
+    "provides": [
+        "pvp-features"
+    ],
+    "permissions": [
+        "pvp.configure",
+        "pvp.stats"
+    ],
+    "graalvm": {
+        "hostAccess": "explicit",
+        "allowClassLoading": [
+            "com.moud.pvp",
+            "net.minestom"
+        ],
+        "resourceLimits": {
+            "statementCount": 100000,
+            "memoryMB": 512
+        }
+    }
+}

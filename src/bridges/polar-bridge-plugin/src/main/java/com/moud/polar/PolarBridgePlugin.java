@@ -5,42 +5,42 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Polar Bridge Plugin for Moud
- * Thin wrapper that uses Moud's existing GraalVM infrastructure and Polar JAR
+ * Exposes Polar world format capabilities to Moud's TypeScript runtime.
+ * 
+ * Self-registers via static initializer for Moud discovery.
  */
 public class PolarBridgePlugin {
     
     private static final Logger logger = LoggerFactory.getLogger(PolarBridgePlugin.class);
+    private static PolarFacade polarFacade;
+    private static boolean initialized = false;
+    
+    static {
+        try {
+            logger.info("[PolarBridgePlugin] Static initialization - registering Polar facade...");
+            polarFacade = new PolarFacade();
+            BridgeRegistry.register("Polar", polarFacade);
+            initialized = true;
+            logger.info("[PolarBridgePlugin] Polar facade registered in BridgeRegistry");
+        } catch (Exception e) {
+            logger.error("[PolarBridgePlugin] Failed to register Polar facade", e);
+        }
+    }
     
     public void initialize(Object context) {
-        try {
-            logger.info("Initializing Polar Bridge Plugin...");
-            
-            // This would be the proper Moud PluginContext in a real implementation
-            // For now, we'll work with the raw context object
-            Object graalContext = context;
-            
-            // Create and inject the Polar facade into the global scope
-            PolarFacade facade = new PolarFacade();
-            
-            // In a real implementation, we would get the bindings from graalContext
-            // For now, we'll simulate the injection
-            logger.info("Polar Bridge Plugin initialized successfully");
-            
-        } catch (Exception e) {
-            logger.error("Failed to initialize Polar Bridge Plugin", e);
-            throw new RuntimeException("Polar Bridge initialization failed", e);
-        }
+        logger.info("[PolarBridgePlugin] Initialize called - facade already in BridgeRegistry");
     }
     
     public void shutdown() {
         try {
-            logger.info("Shutting down Polar Bridge Plugin...");
-            
-            // In a real implementation, we would cleanup resources
-            logger.info("Polar Bridge Plugin shutdown complete");
-            
+            logger.info("[PolarBridgePlugin] Shutting down...");
+            BridgeRegistry.unregister("Polar");
+            initialized = false;
         } catch (Exception e) {
-            logger.error("Error during Polar Bridge Plugin shutdown", e);
+            logger.error("[PolarBridgePlugin] Error during shutdown", e);
         }
     }
+    
+    public static boolean isInitialized() { return initialized; }
+    public static PolarFacade getPolarFacade() { return polarFacade; }
 }

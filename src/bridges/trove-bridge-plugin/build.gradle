@@ -11,6 +11,8 @@ repositories {
     mavenCentral()
     maven { url 'https://repo.codemc.io/repository/maven-public/' }
     maven { url 'https://mvn.everbuild.org/public' }
+    maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
+    maven { url 'https://jitpack.io' }
     // Add Trove repository when available
     // maven { url = 'https://repo.goldenstack.dev/repository/maven-public/' }
 }
@@ -21,6 +23,9 @@ dependencies {
     
     // GraalVM Polyglot (provided by Moud if available)
     compileOnly 'org.graalvm.sdk:graal-sdk:24.0.0'
+    
+    // Minestom (provided by Moud runtime/Terra)
+    compileOnly 'com.dfsek.terra:minestom:6.6.0-BETA+810d10ac0'
     
     // Logging
     implementation 'org.slf4j:slf4j-api:2.0.7'

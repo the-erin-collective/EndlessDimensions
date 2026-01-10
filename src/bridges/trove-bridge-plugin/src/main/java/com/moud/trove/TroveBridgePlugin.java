@@ -1,130 +1,47 @@
 package com.moud.trove;
 
-import endless.bridge.BridgeContext;
-import org.graalvm.polyglot.Context;
-import org.graalvm.polyglot.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Main plugin class that bridges Trove loot system with Moud's TypeScript runtime.
- * Exposes Trove functionality through a global JavaScript object using GraalVM polyglot interoperability.
+ * Trove Bridge Plugin for Moud
+ * Exposes Trove loot table capabilities to Moud's TypeScript runtime.
+ * 
+ * Self-registers via static initializer for Moud discovery.
  */
 public class TroveBridgePlugin {
     
     private static final Logger logger = LoggerFactory.getLogger(TroveBridgePlugin.class);
+    private static TroveFacade troveFacade;
+    private static boolean initialized = false;
     
-    private Context graalContext;
-    private TroveBridge troveBridge;
-    private TroveFacade troveFacade;
+    static {
+        try {
+            logger.info("[TroveBridgePlugin] Static initialization - registering Trove facade...");
+            TroveBridge troveBridge = new TroveBridge();
+            troveFacade = new TroveFacade(troveBridge);
+            BridgeRegistry.register("Trove", troveFacade);
+            initialized = true;
+            logger.info("[TroveBridgePlugin] Trove facade registered in BridgeRegistry");
+        } catch (Exception e) {
+            logger.error("[TroveBridgePlugin] Failed to register Trove facade", e);
+        }
+    }
     
     public void initialize(Object context) {
-        try {
-            logger.info("Initializing Trove Bridge Plugin...");
-            
-            // Cast to GraalVM Context
-            this.graalContext = (Context) context;
-            
-            // Initialize the new bridge implementation
-            troveBridge = new TroveBridge();
-            
-            // Create a simple bridge context for the bridge
-            BridgeContext bridgeContext = createSimpleBridgeContext();
-            
-            // Initialize the bridge
-            troveBridge.initialize(bridgeContext);
-            
-            // Create and inject the Trove facade into the global scope
-            troveFacade = new TroveFacade(troveBridge);
-            injectTroveFacade();
-            
-            logger.info("Trove Bridge Plugin initialized successfully");
-            
-        } catch (Exception e) {
-            logger.error("Failed to initialize Trove Bridge Plugin", e);
-            throw new RuntimeException("Trove bridge initialization failed", e);
-        }
+        logger.info("[TroveBridgePlugin] Initialize called - facade already in BridgeRegistry");
     }
     
     public void shutdown() {
         try {
-            if (troveBridge != null) {
-                troveBridge.shutdown();
-                logger.info("Trove Bridge Plugin shutdown complete");
-            }
+            logger.info("[TroveBridgePlugin] Shutting down...");
+            BridgeRegistry.unregister("Trove");
+            initialized = false;
         } catch (Exception e) {
-            logger.error("Error during Trove Bridge Plugin shutdown", e);
+            logger.error("[TroveBridgePlugin] Error during shutdown", e);
         }
     }
     
-    /**
-     * Get the current Trove bridge for advanced operations
-     * @return TroveBridge instance or null if not initialized
-     */
-    public TroveBridge getTroveBridge() {
-        return troveBridge;
-    }
-    
-    /**
-     * Inject the Trove facade into the global JavaScript scope
-     */
-    private void injectTroveFacade() {
-        try {
-            // Inject Trove facade into global scope
-            Value bindings = graalContext.getBindings("js");
-            bindings.putMember("Trove", troveFacade);
-            
-            logger.debug("Trove facade injected into global scope");
-        } catch (Exception e) {
-            logger.error("Failed to inject Trove facade into global scope", e);
-        }
-    }
-    
-    /**
-     * Create a simple bridge context for the Trove bridge
-     * In a real implementation, this would be provided by the Moud system
-     */
-    private BridgeContext createSimpleBridgeContext() {
-        return new BridgeContext() {
-            public Object assetsRoot() {
-                // In a real implementation, this would return the actual assets root
-                return "assets";
-            }
-            
-            public Object configRoot() {
-                // In a real implementation, this would return the actual config root
-                return "config";
-            }
-            
-            public Object globalEventNode() {
-                // In a real implementation, this would return the actual global event node
-                return null;
-            }
-            
-            public org.slf4j.Logger logger() {
-                return LoggerFactory.getLogger(TroveBridgePlugin.class);
-            }
-            
-            public endless.bridge.DimensionConfigRegistry dimensions() {
-                // In a real implementation, this would return the actual dimension registry
-                return new endless.bridge.DimensionConfigRegistry() {
-                    public endless.bridge.DimensionConfig get(String dimensionId) {
-                        return null;
-                    }
-                    
-                    public endless.bridge.DimensionConfig get(Object dimensionId) {
-                        return null;
-                    }
-                    
-                    public boolean has(String dimensionId) {
-                        return false;
-                    }
-                    
-                    public java.util.Collection<endless.bridge.DimensionConfig> getAll() {
-                        return java.util.List.of();
-                    }
-                };
-            }
-        };
-    }
+    public static boolean isInitialized() { return initialized; }
+    public static TroveFacade getTroveFacade() { return troveFacade; }
 }
