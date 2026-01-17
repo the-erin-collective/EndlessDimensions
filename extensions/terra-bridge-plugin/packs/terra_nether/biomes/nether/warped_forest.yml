@@ -1,0 +1,24 @@
+id: WARPED_FOREST
+type: BIOME
+extends:
+  - BASE
+  - EQ_STANDARD_NETHER
+
+vanilla: minecraft:warped_forest
+color: $biomes/colors.yml:WARPED_FOREST
+
+palette:
+  - << options.yml:palette-top
+  - WARPED_GROUND: $options.yml:nether-top-y
+  - << options.yml:palette-bottom
+  
+features:
+  landforms: 
+    - LAVA_COLUMN
+    - GLOWSTONE_SPIKE
+  trees:
+    - HUGE_WARPED_FUNGUS
+  flora:
+    - FIRE
+    - WARPED_FOLIAGE
+    - TWISTING_VINES

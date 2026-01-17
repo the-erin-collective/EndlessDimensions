@@ -1,0 +1,23 @@
+id: SOUL_VALLEY
+type: BIOME
+extends:
+  - BASE
+  - EQ_SOUL_VALLEY
+
+vanilla: minecraft:soul_sand_valley
+color: $biomes/colors.yml:SOUL_VALLEY
+
+palette:
+  - << options.yml:palette-top
+  - SOUL_GROUND: $options.yml:nether-top-y
+  - << options.yml:palette-bottom
+  
+features:
+  landforms: 
+    - LAVA_COLUMN
+    - JUTTING_SPIKES_CEILING
+    - JUTTING_SPIKES_GROUND
+    - OBSIDIAN_SKEWERS
+    - FOSSIL_RIB_CAGES
+  flora:
+    - SOUL_FIRE

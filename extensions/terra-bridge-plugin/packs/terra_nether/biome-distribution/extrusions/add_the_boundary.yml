@@ -1,0 +1,9 @@
+extrusions:
+  - type: REPLACE
+    from: ALL
+    sampler:
+      type: CONSTANT
+    to: THE_BOUNDARY
+    range:
+      min: $options.yml:the-boundary-min
+      max: $options.yml:the-boundary-max

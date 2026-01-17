@@ -1,0 +1,26 @@
+id: BLOODY_REMNANTS
+type: BIOME
+extends:
+  - BASE
+  - EQ_STANDARD_NETHER
+
+vanilla: minecraft:crimson_forest
+color: $biomes/colors.yml:BLOODY_REMNANTS
+
+palette:
+  - << options.yml:palette-top
+  - FLESH_GROUND: $options.yml:nether-top-y
+  - << options.yml:palette-bottom
+  
+features:
+  landforms: 
+    - LAVA_COLUMN
+    - BONE_COLUMN
+  trees:
+    - HEART_CAVITY
+    - TENDONS
+  flora:
+    - FIRE
+    - BLOODY_HAIRS
+    - DRIPPING_FUNGI
+    - DANGLING_FLESH

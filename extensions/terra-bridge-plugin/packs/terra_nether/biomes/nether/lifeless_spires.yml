@@ -1,0 +1,22 @@
+id: LIFELESS_SPIRES
+type: BIOME
+extends:
+  - BASE
+  - EQ_SPIRES
+
+vanilla: minecraft:basalt_deltas
+color: $biomes/colors.yml:LIFELESS_SPIRES
+
+palette:
+  - << options.yml:palette-top
+  - LIFELESS_GROUND: $options.yml:nether-top-y
+  - << options.yml:palette-bottom
+  
+features:
+  landforms: 
+    - MAGMA_CLUSTER_GROUND
+    - MAGMA_CLUSTER_CEILING
+    - LAVA_SKEWERS_GROUND_LS
+    - LAVA_SKEWERS_CEILING_LS
+  flora:
+    - FIRE

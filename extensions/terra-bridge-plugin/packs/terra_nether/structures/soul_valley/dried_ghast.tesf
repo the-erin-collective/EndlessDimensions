@@ -1,0 +1,9 @@
+str blockID = "minecraft:dried_ghast[facing=";
+
+num random = randomInt(4);
+if (random == 0) blockID = blockID + "north]";
+if (random == 1) blockID = blockID + "east]";
+if (random == 2) blockID = blockID + "south]";
+if (random == 3) blockID = blockID + "west]";
+
+block(0, 0, 0, blockID, false);

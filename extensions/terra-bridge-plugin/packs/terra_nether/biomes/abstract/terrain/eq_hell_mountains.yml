@@ -1,0 +1,80 @@
+id: EQ_HELL_MOUNTAINS
+type: BIOME
+abstract: true
+
+vars: &variables
+  base: ${options.yml:bottom-y} + 20
+  height: ${options.yml:bedrock-top-y} - 20
+  bedrockTop: $options.yml:bedrock-top-y
+  netherTop: $options.yml:nether-top-y
+
+terrain:
+  sampler:
+    type: EXPRESSION
+    dimensions: 3
+    variables: *variables
+    expression: |
+      if (y > bedrockTop, -1,
+        if (y > netherTop, y,
+          max( -y + base +
+            terraceParabolic(
+              terraceParabolic(
+                terraceParabolic(
+                  (noise(x, z)+1) * height + (-bubbles(x, z)-0.75)/2 * 10,
+                  10, terraceVariation(x, z)*2, 0, 1
+                ),
+                20, terraceVariation(x, z+1000)*3, 0, 1
+              ),
+              30, terraceVariation(x, z+2000)*4, 0, 1
+            ),
+           
+            -(-((y / 32)^2) + 52 + |(simplex2(x, z) * 5) + 0.1|)
+          )
+        )
+      )
+    samplers:
+      bubbles:
+        dimensions: 2
+        type: LINEAR
+        min: -1
+        max: 0.2
+        sampler:
+          type: CELLULAR
+          frequency: 0.09
+      noise:
+        dimensions: 2
+        type: DOMAIN_WARP
+        amplitude: 0.15
+        warp:
+          type: GAUSSIAN
+        sampler:
+          type: DOMAIN_WARP
+          amplitude: 5
+          warp:
+            type: FBM
+            octaves: 2
+            sampler:
+              type: OPEN_SIMPLEX_2
+              salt: 1
+          sampler:
+            type: FBM
+            octaves: 4
+            sampler:
+              type: LINEAR
+              min: -1
+              max: 0.2
+              sampler:
+                type: CELLULAR
+                frequency: 0.005
+      terraceVariation:
+        dimensions: 2
+        type: FBM
+        octaves: 3
+        lacunarity: 2.5
+        sampler:
+          type: OPEN_SIMPLEX_2
+          frequency: 0.0015
+            
+  sampler-2d:
+    dimensions: 2
+    type: CONSTANT

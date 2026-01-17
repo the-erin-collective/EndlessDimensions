@@ -1,0 +1,48 @@
+biomes:
+  type: EXTRUSION
+  extrusions:
+    - << biome-distribution/extrusions/add_the_boundary.yml:extrusions
+  provider:
+    type: PIPELINE
+    resolution: 4
+    blend:
+      amplitude: 2
+      resolution: 2
+      sampler:
+        type: GAUSSIAN
+    pipeline:
+      source:
+        type: SAMPLER
+        biomes:
+          - nether: 1
+        sampler:
+          dimensions: 2
+          type: CONSTANT
+      stages:
+        - type: REPLACE
+          from: nether
+          to: $options.yml:biome-pool
+          sampler:
+            dimensions: 2
+            type: CELLULAR
+            return: CellValue
+            salt: 69420101
+            frequency: 1 / ${options.yml:biome-size}
+        - type: FRACTAL_EXPAND
+          sampler:
+            type: WHITE_NOISE
+        - type: FRACTAL_EXPAND
+          sampler:
+            type: WHITE_NOISE
+        - type: FRACTAL_EXPAND
+          sampler:
+            type: WHITE_NOISE
+        - type: FRACTAL_EXPAND
+          sampler:
+            type: WHITE_NOISE
+        - type: SMOOTH
+          sampler:
+            type: WHITE_NOISE
+        - type: SMOOTH
+          sampler:
+            type: WHITE_NOISE

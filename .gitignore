@@ -53,3 +53,13 @@ config/
 /terra-bridge-plugin/.gradle
 /src/bridges/pvp-bridge-plugin/.gradle
 /src/bridges/trove-bridge-plugin/.gradle
+*.class
+/src/bridge/registry/.gradle
+/.gradle
+/docs/reference/ProjectInfinity-master
+/.temp-build
+/extensions/terra-bridge-plugin/packs/terra_end/.github
+/extensions/terra-bridge-plugin/packs/terra_end/.scripts
+/extensions/terra-bridge-plugin/packs/terra_overworld/.scripts
+/src/bridges/base-bridge-plugin/.gradle
+/src/bridges/endless-bridge-plugin/.gradle

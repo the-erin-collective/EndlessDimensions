@@ -1,0 +1,59 @@
+id: TARTARUS
+version: 1.0.0
+author: "Jaddot"
+
+generator: NOISE_3D
+
+vanilla: "minecraft:the_nether"
+vanilla-generation: "minecraft:nether"
+
+addons:
+  biome-provider-pipeline: "2.+"
+  biome-provider-single: "1.+"
+  biome-provider-image: "1.+"
+  biome-provider-extrusion: "1.+"
+  chunk-generator-noise-3d: "1.+"
+  config-biome: "1.+"
+  config-flora: "1.+"
+  config-noise-function: "1.+"
+  config-ore: "1.+"
+  config-palette: "1.+"
+  config-distributors: "1.+"
+  config-locators: "1.+"
+  config-feature: "1.+"
+  structure-terrascript-loader: "1.+"
+  structure-sponge-loader: "1.+"
+  language-yaml: "1.+"
+  generation-stage-feature: "1.+"
+  structure-function-check-noise-3d: "1.+"
+  palette-block-shortcut: "1.+"
+  structure-block-shortcut: "1.+"
+  terrascript-function-sampler: "1.+"
+    
+stages:
+  - id: landforms
+    type: FEATURE
+  - id: trees
+    type: FEATURE
+  - id: flora
+    type: FEATURE
+  - id: ores
+    type: FEATURE
+    
+biomes: $biome-distribution/distribution.yml:biomes
+
+#biomes:
+#  type: SINGLE
+#  biome: FLAMING_HELLSCAPES
+  
+functions:
+  "<<":
+    - functions/terrace.yml:functions
+    - functions/lerp.yml:functions
+    - functions/maskSmooth.yml:functions
+    - functions/stepLipped.yml:functions
+  
+samplers:
+  "<<":
+    - samplers/samplers.yml:samplers
+

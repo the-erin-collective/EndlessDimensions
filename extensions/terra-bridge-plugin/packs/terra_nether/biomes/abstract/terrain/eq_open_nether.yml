@@ -1,0 +1,30 @@
+id: EQ_OPEN_NETHER
+type: BIOME
+abstract: true
+
+vars: &variables
+  base: ${options.yml:bedrock-top-y} - 20
+  bedrockTop: $options.yml:bedrock-top-y
+  netherTop: $options.yml:nether-top-y
+
+terrain:
+  sampler:
+    type: EXPRESSION
+    dimensions: 3
+    variables: *variables
+    expression: |
+      if (y > bedrockTop, -1,
+        if (y > netherTop, y,
+          max(
+            max(
+              if(y, abs(y-64)/128 + simplex3(x, y*2, z)*5 - 1, 1), 
+                -((y / 28)^2) + 1 + simplex2(x, z)*1.25), 
+                  -(((-((y / (base))^2)) + 1) + |(simplex2(x, z) / 3)|
+            )
+          ) 
+        )
+      )
+
+  sampler-2d:
+    dimensions: 2
+    type: CONSTANT

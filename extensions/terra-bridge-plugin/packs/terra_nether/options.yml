@@ -1,0 +1,54 @@
+biome-size: 300
+# Size of each biome. Default is 300. T
+# The higher the number, the bigger the biomes.
+#Decimals are allowed, and you may set a number less than 1.
+
+
+biome-pool:
+  - BASALTIC_DELTAS: 5
+  - BLOODLESS_UNDERGROWTH: 3
+  - BLOODY_REMNANTS: 3
+  - CORRUPTED_WASTES: 7
+  - CRIMSON_FOREST: 6
+  - CRYSTALLINE_VELDTS: 1
+  - FLAMING_HELLSCAPES: 5
+  - LIFELESS_SPIRES: 3
+  - SERRATED_MOUNTAINS: 4
+  - SOUL_VALLEY: 2
+  - TORRID_CRAGS: 4
+  - WARPED_FOREST: 6
+# Biomes used to generate into the world.
+# To disable a biome, you can delete the line of the biome you want to prevent from generating,
+# or you can set the weight to 0.
+
+# World Y levels
+top-y: 255
+# Top of world above top bedrock layer. Default: 255
+
+bedrock-top-y: 255
+# Top of bedrock layer. Default: 255
+bedrock-top-buffer: 5
+# Buffer for top bedrock layer. Default: 5
+
+the-boundary-min: ${options.yml:bedrock-top-y} + 1
+the-boundary-max: ${options.yml:bedrock-top-y} + 30
+# Controls the min and max generation of The Boundary
+
+nether-top-y: ${options.yml:bedrock-top-y} - ${options.yml:bedrock-top-buffer} - 5
+# Top of nether for biome palettes. Default: ${options.yml:bedrock-top-y} - ${options.yml:bedrock-top-buffer}
+
+lava-level: 32
+# Level of lava. Default: 32
+
+bottom-buffer: 5
+# Buffer for bottom bedrock layer. Default: 5
+bottom-y: 0
+# Bottom of the world including bottom bedrock layer. Default: 0
+
+palette-top:
+  - BEDROCK_TOP: $options.yml:top-y
+
+palette-bottom:
+  - BLOCK:minecraft:netherrack: ${options.yml:lava-level} - 1
+  - BEDROCK: ${options.yml:bottom-y} + ${options.yml:bottom-buffer}
+  - BLOCK:minecraft:air: ${options.yml:bottom-y} - 1

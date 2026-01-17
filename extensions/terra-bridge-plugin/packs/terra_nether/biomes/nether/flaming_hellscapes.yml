@@ -1,0 +1,25 @@
+id: FLAMING_HELLSCAPES
+type: BIOME
+extends:
+  - BASE
+  - EQ_OPEN_NETHER
+
+vanilla: minecraft:nether_wastes
+color: $biomes/colors.yml:FLAMING_HELLSCAPES
+
+palette:
+  - << options.yml:palette-top
+  - FLAMING_GROUND: $options.yml:nether-top-y
+  - << options.yml:palette-bottom
+  
+features:
+  landforms: 
+    - LAVA_COLUMN_FH
+    - RED_NETHER_BRICK_PILLAR
+    - LAVA_SKEWERS_GROUND
+    - LAVA_SKEWERS_CEILING
+    - GLOWSTONE_SPIKE
+  trees:
+    - SKELETAL_TREES
+  flora:
+    - FIRE_FH

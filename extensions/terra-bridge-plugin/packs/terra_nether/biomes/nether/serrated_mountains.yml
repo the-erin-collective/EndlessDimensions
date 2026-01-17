@@ -1,0 +1,24 @@
+id: SERRATED_MOUNTAINS
+type: BIOME
+extends:
+  - BASE
+  - EQ_HELL_MOUNTAINS
+
+vanilla: minecraft:basalt_deltas
+color: $biomes/colors.yml:SERRATED_MOUNTAINS
+
+palette:
+  - << options.yml:palette-top
+  - BASALTIC_GROUND: $options.yml:nether-top-y
+  - << options.yml:palette-bottom
+  
+features:
+  landforms: 
+    - BASALT_COLUMN_LAVA
+    - BASALT_TERRAIN_SPIKES_LAVA
+    - BASALT_TERRAIN_SPIKES
+    - GLOWSTONE_SPIKE
+  flora:
+    - LAVA_BLOCK
+    - MAGMA_LAVA
+    - LAVA_COLUMN

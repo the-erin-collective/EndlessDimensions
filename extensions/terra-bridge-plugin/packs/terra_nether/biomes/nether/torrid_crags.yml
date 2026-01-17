@@ -1,0 +1,25 @@
+id: TORRID_CRAGS
+type: BIOME
+extends:
+  - BASE
+  - EQ_HELL_MOUNTAINS
+
+vanilla: minecraft:nether_wastes
+color: $biomes/colors.yml:TORRID_CRAGS
+
+palette:
+  - << options.yml:palette-top
+  - FLAMING_GROUND: $options.yml:nether-top-y
+  - << options.yml:palette-bottom
+  
+features:
+  landforms: 
+    - LAVA_COLUMN_FH
+    - RED_NETHER_BRICK_PILLAR
+    - LAVA_SKEWERS_GROUND
+    - LAVA_SKEWERS_CEILING
+    - GLOWSTONE_SPIKE
+  trees:
+    - SKELETAL_TREES
+  flora:
+    - FIRE_FH

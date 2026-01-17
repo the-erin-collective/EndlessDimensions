@@ -1,0 +1,31 @@
+id: EQ_SPIRES
+type: BIOME
+abstract: true
+
+vars: &variables
+  base: ${options.yml:bedrock-top-y}/4
+  bedrockTop: $options.yml:bedrock-top-y
+  netherTop: $options.yml:nether-top-y
+
+terrain:
+  sampler:
+    type: EXPRESSION
+    dimensions: 3
+    variables: *variables
+    expression: |
+      if (y > bedrockTop, -1,
+        if (y > netherTop, y,
+          max(
+            max(
+              (((-((y / 24)^2)) + 1) + |(simplex2(x, z) * 3) + 0.1|), 
+                (-((y / base)^2) + 1) + ((simplex2(x, z)/2)*abs(simplex2(4*x, 4*z)*36 + 1))), 
+                  max(-((-((y / base)^2) + 9.5) + ((simplex2(x, z)/2)*abs(simplex2(4*x, 4*z)*36 + 1))), 
+                    -(((-((y / base)^2)) + 15) + |(simplex2(x, z) / 3) + 0.1|)
+            )
+          )
+        )
+      )
+
+  sampler-2d:
+    dimensions: 2
+    type: CONSTANT

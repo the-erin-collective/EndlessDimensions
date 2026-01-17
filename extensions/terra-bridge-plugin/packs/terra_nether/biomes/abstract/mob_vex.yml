@@ -1,0 +1,19 @@
+id: MOB_VEX
+type: BIOME
+abstract: true
+
+spawning:
+  costs:
+    - type:
+        id: minecraft:pig
+      mass: 1
+      gravity: 1
+  spawns:
+    - group: MONSTER
+      entries:
+        - type:
+            id: minecraft:vex
+          group-size:
+            min: 4
+            max: 4
+          weight: 45

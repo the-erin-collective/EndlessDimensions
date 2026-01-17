@@ -1,0 +1,3 @@
+[submodule "images"]
+	path = .wiki/images
+	url = https://github.com/PolyhedralDev/TerraOverworldConfigImages.git

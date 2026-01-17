@@ -1,0 +1,26 @@
+id: BLOODLESS_UNDERGROWTH
+type: BIOME
+extends:
+  - BASE
+  - EQ_STANDARD_NETHER
+
+vanilla: minecraft:warped_forest
+color: $biomes/colors.yml:BLOODLESS_UNDERGROWTH
+
+palette:
+  - << options.yml:palette-top
+  - ANEMIC_GROUND: $options.yml:nether-top-y
+  - << options.yml:palette-bottom
+  
+features:
+  landforms: 
+    - LAVA_COLUMN
+    - WARPED_STEM_COLUMN
+    - GLOWSTONE_SPIKE
+  trees:
+    - TENTACLES
+  flora:
+    - FIRE
+    - MANGLED_IVY
+    - BURSTING_FUNGI
+    - FOUL_SHOOTS

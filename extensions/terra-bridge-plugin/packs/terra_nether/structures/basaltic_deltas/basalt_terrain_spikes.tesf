@@ -1,0 +1,11 @@
+if (getBlock(0, -1, 0) != "minecraft:blackstone" && getBlock(0, -1, 0) != "minecraft:smooth_basalt") fail;
+
+num spikeHeight = 1;
+
+spikeHeight = 1 + randomInt(6);
+
+if (randomInt(5) == 0) spikeHeight = spikeHeight + randomInt(3);
+
+for (num spikeY = 0; spikeY < spikeHeight; spikeY = spikeY + 1) {
+    block(0, spikeY, 0, "minecraft:basalt", false);
+}
