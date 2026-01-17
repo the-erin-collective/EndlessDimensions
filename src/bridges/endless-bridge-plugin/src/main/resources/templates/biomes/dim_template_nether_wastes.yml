@@ -1,0 +1,27 @@
+# Source: docs/terrapacks/Tartarus/biomes/nether/soul_valley.yml
+# Self-contained template; replace DIM_PAL_SLOT/DIM_PAL_SLOT_STONE when instantiating slots.
+id: dim_template_nether_wastes
+type: BIOME
+vanilla: minecraft:soul_sand_valley
+color: 0x5e4429
+
+ocean:
+  palette: BLOCK:minecraft:lava
+  level: 32
+
+palette:
+  - BLOCK:minecraft:bedrock: 255
+  - DIM_PAL_SLOT: 245
+  - DIM_PAL_SLOT_STONE: 31
+  - BLOCK:minecraft:bedrock: 5
+  - BLOCK:minecraft:air: -1
+
+features:
+  landforms:
+    - LAVA_COLUMN
+    - JUTTING_SPIKES_CEILING
+    - JUTTING_SPIKES_GROUND
+    - OBSIDIAN_SKEWERS
+    - FOSSIL_RIB_CAGES
+  flora:
+    - SOUL_FIRE

@@ -1,0 +1,7 @@
+# Overlay: add end-ship mesh features to a chosen base biome.
+id: dim_overlay_between
+type: BIOME_OVERLAY
+
+features:
+  landforms:
+    - BETWEEN_END_SHIPS

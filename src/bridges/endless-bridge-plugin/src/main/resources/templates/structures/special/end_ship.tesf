@@ -1,0 +1,113 @@
+// End Ship Terrascript
+// Converted to keep only block placements (no entities).
+
+// Block Palette
+str PURPUR_BLOCK = "minecraft:purpur_block";
+str PURPUR_PILLAR = "minecraft:purpur_pillar";
+str PURPUR_STAIRS = "minecraft:purpur_stairs";
+str PURPUR_SLAB = "minecraft:purpur_slab";
+str OBSIDIAN = "minecraft:obsidian";
+str END_STONE_BRICKS = "minecraft:end_stone_bricks";
+str END_ROD = "minecraft:end_rod";
+str BREWING_STAND = "minecraft:brewing_stand";
+str MAGENTA_GLASS = "minecraft:magenta_stained_glass";
+str DRAGON_HEAD = "minecraft:dragon_head";
+str LADDER = "minecraft:ladder";
+str CHEST = "minecraft:chest";
+str ITEM_FRAME = "minecraft:air";
+str SHULKER = "minecraft:shulker_box";
+
+// Layer 1: 13 pillars, oriented front/back (axis=z)
+for (num i = 0; i < 13; i = i + 1) {
+    block(0, 0, i, PURPUR_PILLAR + "[axis=z]");
+}
+
+// Layer 2
+block(0, 1, 8, PURPUR_PILLAR + "[axis=z]");
+block(0, 1, 9, PURPUR_PILLAR + "[axis=z]");
+block(0, 1, 10, PURPUR_PILLAR + "[axis=z]");
+block(0, 1, 11, PURPUR_PILLAR + "[axis=z]");
+for (num z = 12; z <= 20; z = z + 1) {
+    if (z == 13 || z == 17) {
+        block(-1, 1, z, PURPUR_STAIRS + "[facing=east,half=top]");
+        block(0, 1, z, PURPUR_BLOCK);
+        block(1, 1, z, PURPUR_STAIRS + "[facing=west,half=top]");
+    } else {
+        block(-1, 1, z, PURPUR_BLOCK);
+        block(0, 1, z, PURPUR_BLOCK);
+        block(1, 1, z, PURPUR_BLOCK);
+    }
+}
+block(0, 1, 21, PURPUR_PILLAR + "[axis=z]");
+block(0, 1, 22, PURPUR_PILLAR + "[axis=z]");
+
+// Layer 3
+block(0, 2, 6, PURPUR_PILLAR + "[axis=z]");
+block(0, 2, 7, PURPUR_PILLAR + "[axis=z]");
+for (num z = 8; z <= 21; z = z + 1) {
+    if (z == 13 || z == 17 || z == 21) {
+        block(-2, 2, z, PURPUR_STAIRS + "[facing=east,half=top]");
+        block(-1, 2, z, PURPUR_BLOCK);
+        block(0, 2, z, PURPUR_PILLAR + "[axis=z]");
+        block(1, 2, z, PURPUR_BLOCK);
+        block(2, 2, z, PURPUR_STAIRS + "[facing=west,half=top]");
+    } else {
+        block(-1, 2, z, PURPUR_BLOCK);
+        block(0, 2, z, PURPUR_PILLAR + "[axis=z]");
+        block(1, 2, z, PURPUR_BLOCK);
+    }
+}
+
+// Layer 4 (Hull starts to open)
+for (num z = 5; z <= 25; z = z + 1) {
+    if (z >= 8 && z <= 24) {
+        block(-2, 3, z, PURPUR_BLOCK);
+        block(2, 3, z, PURPUR_BLOCK);
+    }
+}
+block(0, 3, 14, PURPUR_PILLAR + "[axis=y]");
+
+// Layer 5 (Interior)
+block(0, 4, 5, PURPUR_BLOCK);
+block(0, 4, 14, PURPUR_PILLAR + "[axis=y]");
+block(-1, 4, 7, CHEST + "[facing=south]");
+block(1, 4, 7, CHEST + "[facing=south]");
+block(0, 4, 8, SHULKER);
+
+// Layer 6 (Deck and Item Frame placeholder)
+block(0, 5, 7, ITEM_FRAME);
+block(0, 5, 14, PURPUR_PILLAR + "[axis=y]");
+
+// Layer 7 (Masts and Stern)
+block(0, 6, 14, PURPUR_PILLAR + "[axis=y]");
+block(0, 6, 25, PURPUR_PILLAR + "[axis=y]");
+
+// Layer 8 (Windows)
+block(0, 7, 14, PURPUR_PILLAR + "[axis=y]");
+block(-4, 7, 23, MAGENTA_GLASS);
+block(4, 7, 23, MAGENTA_GLASS);
+
+// Layer 9 (Dragon Head)
+block(0, 8, 0, DRAGON_HEAD + "[facing=north]");
+block(0, 8, 1, PURPUR_STAIRS + "[facing=south]");
+block(0, 8, 14, PURPUR_PILLAR + "[axis=y]");
+block(0, 8, 15, LADDER + "[facing=south]");
+
+// Layers 10-23 (Mast and Crow's Nest)
+for (num y = 9; y <= 22; y = y + 1) {
+    block(0, y, 14, PURPUR_PILLAR + "[axis=y]");
+    block(0, y, 15, LADDER + "[facing=south]");
+}
+
+// Crow's Nest (Layer 22-23)
+for (num x = -2; x <= 2; x = x + 1) {
+    for (num z = 12; z <= 16; z = z + 1) {
+        if (x == -2 || x == 2 || z == 12 || z == 16) {
+            block(x, 21, z, PURPUR_STAIRS + "[facing=north]");
+        }
+    }
+}
+block(0, 22, 14, PURPUR_PILLAR + "[axis=y]");
+
+// Final Block
+block(0, 23, 14, PURPUR_BLOCK);

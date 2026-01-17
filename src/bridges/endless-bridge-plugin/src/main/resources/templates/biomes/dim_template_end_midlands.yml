@@ -1,0 +1,12 @@
+# Source: docs/terrapacks/ReimagEND/biomes/end/legacy/end_midlands.yml
+# Self-contained template; replace DIM_PAL_SLOT/DIM_PAL_SLOT_STONE when instantiating slots.
+id: dim_template_end_midlands
+type: BIOME
+vanilla: minecraft:end_midlands
+color: 0xc9c9b1
+
+palette:
+  - DIM_PAL_SLOT: 319
+  - DIM_PAL_SLOT_STONE: 7
+  - BLOCK:minecraft:bedrock: -60
+  - BLOCK:minecraft:bedrock: -64

@@ -1,0 +1,16 @@
+# Shell options for superflat geometry.
+top-y: 128
+bedrock-top-y: 128
+bedrock-top-buffer: 2
+nether-top-y: 96
+lava-level: 62
+bottom-buffer: 1
+bottom-y: 0
+
+palette-top:
+  - BLOCK:minecraft:bedrock: $options.yml:top-y
+
+palette-bottom:
+  - BLOCK:minecraft:netherrack: ${options.yml:lava-level} - 1
+  - BLOCK:minecraft:bedrock: ${options.yml:bottom-y} + ${options.yml:bottom-buffer}
+  - BLOCK:minecraft:air: ${options.yml:bottom-y} - 1

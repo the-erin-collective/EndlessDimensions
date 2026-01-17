@@ -1,0 +1,28 @@
+# Source: docs/terrapacks/Tartarus/biomes/nether/warped_forest.yml
+# Self-contained template; replace DIM_PAL_SLOT/DIM_PAL_SLOT_STONE when instantiating slots.
+id: dim_template_warped_forest
+type: BIOME
+vanilla: minecraft:warped_forest
+color: 0x4d73bd
+
+ocean:
+  palette: BLOCK:minecraft:lava
+  level: 32
+
+palette:
+  - BLOCK:minecraft:bedrock: 255
+  - DIM_PAL_SLOT: 245
+  - DIM_PAL_SLOT_STONE: 31
+  - BLOCK:minecraft:bedrock: 5
+  - BLOCK:minecraft:air: -1
+
+features:
+  landforms:
+    - LAVA_COLUMN
+    - GLOWSTONE_SPIKE
+  trees:
+    - HUGE_WARPED_FUNGUS
+  flora:
+    - FIRE
+    - WARPED_FOLIAGE
+    - TWISTING_VINES

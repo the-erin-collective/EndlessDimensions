@@ -1,0 +1,13 @@
+num radius = randomInt(4) + 3;
+num r2 = radius * radius;
+
+for (num x = -radius; x <= radius; x = x + 1) {
+    for (num y = -radius; y <= radius; y = y + 1) {
+        for (num z = -radius; z <= radius; z = z + 1) {
+            num dist = x * x + y * y + z * z;
+            if (dist <= r2) {
+                block(x, y, z, "DIM_SURFACE_BLOCK", false);
+            }
+        }
+    }
+}

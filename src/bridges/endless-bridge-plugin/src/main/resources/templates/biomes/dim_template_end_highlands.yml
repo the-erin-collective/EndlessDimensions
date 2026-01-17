@@ -1,0 +1,19 @@
+# Source: docs/terrapacks/ReimagEND/biomes/end/end_highlands.yml
+# Self-contained template; replace DIM_PAL_SLOT/DIM_PAL_SLOT_STONE when instantiating slots.
+id: dim_template_end_highlands
+type: BIOME
+vanilla: minecraft:end_highlands
+color: 0xe8e8cf
+
+tags:
+  - ADD_VOID_BIOMES
+
+palette:
+  - DIM_PAL_SLOT: 319
+  - DIM_PAL_SLOT_STONE: 7
+  - BLOCK:minecraft:bedrock: -60
+  - BLOCK:minecraft:bedrock: -64
+
+features:
+  trees:
+    - CHORUS_PLANTS

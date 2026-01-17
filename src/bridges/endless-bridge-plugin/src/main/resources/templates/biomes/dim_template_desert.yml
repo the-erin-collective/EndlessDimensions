@@ -1,0 +1,44 @@
+# Source: docs/terrapacks/TerraOverworldConfig/biomes/land/dry/desert/white/desert.yml
+# Self-contained template; replace DIM_PAL_SLOT/DIM_PAL_SLOT_STONE when instantiating slots.
+id: dim_template_desert
+type: BIOME
+vanilla: minecraft:desert
+color: 0xe8cf68
+
+tags:
+  - LAND_CAVES
+  - USE_DESERT_RIVER
+
+climate:
+  precipitation: false
+  temperature: 2.0
+  downfall: 0.0
+
+colors:
+  water: 0x32a598
+  water-fog: 0x32a598
+
+slant-depth: 15
+
+palette:
+  - DIM_PAL_SLOT: 319
+  - DIM_PAL_SLOT_STONE: 7
+  - BLOCK:minecraft:bedrock: -60
+  - BLOCK:minecraft:bedrock: -64
+
+slant:
+  - threshold: 0.3
+    palette:
+      - DIM_PAL_SLOT_STONE: 319
+      - BLOCK:minecraft:bedrock: -60
+      - BLOCK:minecraft:bedrock: -64
+
+features:
+  flora:
+    - CACTUS_SPARSE
+    - DEAD_BUSHES
+    - DRY_GRASS
+  structures:
+    - MOB_ROOMS
+    - DESERT_WELLS
+    - SPARSE_FOSSILS

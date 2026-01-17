@@ -1,0 +1,7 @@
+# Overlay: add procedural shape scatter on top of a chosen base biome.
+id: dim_overlay_shapes
+type: BIOME_OVERLAY
+
+features:
+  landforms:
+    - SHAPES_SCATTER

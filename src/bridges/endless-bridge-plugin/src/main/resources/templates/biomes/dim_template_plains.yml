@@ -1,0 +1,50 @@
+# Source: docs/terrapacks/TerraOverworldConfig/biomes/land/temperate/oceanic/plain/temperate_grassland.yml
+# Self-contained template; replace DIM_PAL_SLOT/DIM_PAL_SLOT_STONE when instantiating slots.
+id: dim_template_plains
+type: BIOME
+vanilla: minecraft:plains
+color: 0x91bd59
+
+tags:
+  - LAND_CAVES
+  - USE_RIVER_TEMPERATE_MARSH
+
+climate:
+  precipitation: true
+  temperature: 0.8
+  downfall: 0.4
+
+colors:
+  grass: 0x91bd59
+  foliage: 0x77ab2f
+  water: 0x44aff5
+  water-fog: 0x44aff5
+
+ocean:
+  palette: BLOCK:minecraft:water
+  level: 62
+
+slant-depth: 15
+
+palette:
+  - DIM_PAL_SLOT: 319
+  - DIM_PAL_SLOT_STONE: 7
+  - BLOCK:minecraft:bedrock: -60
+  - BLOCK:minecraft:bedrock: -64
+
+slant:
+  - threshold: 0.4
+    palette:
+      - DIM_PAL_SLOT_STONE: 319
+      - BLOCK:minecraft:bedrock: -60
+      - BLOCK:minecraft:bedrock: -64
+
+features:
+  flora:
+    - GRASS
+    - POPPY_PATCH
+    - DANDELION_PATCH
+    - BUSH
+  trees:
+    - SPARSE_OAK_TREES
+    - SPARSE_FALLEN_OAK_TREES

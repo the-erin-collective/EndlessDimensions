@@ -1,0 +1,23 @@
+num size = randomInt(4) + 3;
+
+for (num x = -size; x <= size; x = x + 1) {
+    for (num y = -size; y <= size; y = y + 1) {
+        for (num z = -size; z <= size; z = z + 1) {
+            num ax = x;
+            num ay = y;
+            num az = z;
+            if (ax < 0) {
+                ax = -ax;
+            }
+            if (ay < 0) {
+                ay = -ay;
+            }
+            if (az < 0) {
+                az = -az;
+            }
+            if (ax + ay + az <= size) {
+                block(x, y, z, "DIM_SURFACE_BLOCK", false);
+            }
+        }
+    }
+}

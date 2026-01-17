@@ -1,0 +1,24 @@
+id: SHAPES_SCATTER
+type: FEATURE
+
+distributor:
+  type: PADDED_GRID
+  width: DIM_SHAPES_GRID_WIDTH
+  padding: DIM_SHAPES_GRID_PADDING
+  salt: 4401
+
+locator:
+  type: RANDOM
+  height:
+    min: ${meta.yml:ocean-level} + 10
+    max: $meta.yml:top-y - 10
+  amount: DIM_SHAPES_AMOUNT
+
+structures:
+  distribution:
+    type: WHITE_NOISE
+    salt: 8841
+  structures:
+    - shape_cube: DIM_SHAPES_WEIGHT_CUBE
+    - shape_sphere: DIM_SHAPES_WEIGHT_SPHERE
+    - shape_diamond: DIM_SHAPES_WEIGHT_DIAMOND

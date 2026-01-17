@@ -1,0 +1,16 @@
+# Shell options for end-like geometry.
+top-y: 255
+bedrock-top-y: 255
+bedrock-top-buffer: 5
+nether-top-y: 200
+lava-level: 0
+bottom-buffer: 5
+bottom-y: 0
+
+palette-top:
+  - BLOCK:minecraft:bedrock: $options.yml:top-y
+
+palette-bottom:
+  - BLOCK:minecraft:end_stone: ${options.yml:lava-level} - 1
+  - BLOCK:minecraft:bedrock: ${options.yml:bottom-y} + ${options.yml:bottom-buffer}
+  - BLOCK:minecraft:air: ${options.yml:bottom-y} - 1

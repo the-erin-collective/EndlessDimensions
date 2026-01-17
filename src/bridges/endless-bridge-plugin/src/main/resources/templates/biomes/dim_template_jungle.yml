@@ -1,0 +1,68 @@
+# Source: docs/terrapacks/TerraOverworldConfig/biomes/land/tropical/equatorial/forest/jungle.yml
+# Self-contained template; replace DIM_PAL_SLOT/DIM_PAL_SLOT_STONE when instantiating slots.
+id: dim_template_jungle
+type: BIOME
+vanilla: minecraft:jungle
+color: 0x00ff16
+
+tags:
+  - LAND_CAVES
+  - JUNGLE_CAVES
+  - USE_TROPICAL_RIVER
+
+climate:
+  precipitation: true
+  temperature: 1.0
+  downfall: 1.0
+
+colors:
+  grass: 0x59c93c
+  foliage: 0x30bb0b
+  water: 0x14a2c5
+  water-fog: 0x14a2c5
+
+ocean:
+  palette: BLOCK:minecraft:water
+  level: 62
+
+slant-depth: 15
+
+palette:
+  - DIM_PAL_SLOT: 319
+  - DIM_PAL_SLOT_STONE: 7
+  - BLOCK:minecraft:bedrock: -60
+  - BLOCK:minecraft:bedrock: -64
+
+slant:
+  - threshold: 0.8
+    palette:
+      - DIM_PAL_SLOT: 319
+      - DIM_PAL_SLOT_STONE: 7
+      - BLOCK:minecraft:bedrock: -60
+      - BLOCK:minecraft:bedrock: -64
+  - threshold: 0.4
+    palette:
+      - DIM_PAL_SLOT_STONE: 319
+      - BLOCK:minecraft:bedrock: -60
+      - BLOCK:minecraft:bedrock: -64
+
+features:
+  flora:
+    - GRASS
+    - LARGE_LEAF_VINES
+    - POPPY_PATCH
+    - DANDELION_PATCH
+    - ROSE_BUSH_PATCH
+    - PEONY_PATCH
+    - LILAC_PATCH
+    - LILY_OF_THE_VALLEY_PATCH
+    - SMALL_DRIPLEAF
+    - BIG_DRIPLEAF
+  trees:
+    - JUNGLE_TREES
+    - DENSE_JUNGLE_BUSHES
+    - POTATO_PATCHES
+    - MELON_PATCHES
+    - SPARSE_FALLEN_JUNGLE_TREES
+  landforms:
+    - SMALL_MOSSY_BOULDER_PATCHES

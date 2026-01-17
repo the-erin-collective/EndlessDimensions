@@ -1,0 +1,17 @@
+num age = randomInt(3);
+str face = "west";
+
+if (getBlock(-1, 0, 0) == "DIM_TREE_LOG_Y" || getBlock(-1, 0, 0) == "DIM_TREE_WOOD") {
+    face = "west";
+} else if (getBlock(0, 0, -1) == "DIM_TREE_LOG_Y" || getBlock(0, 0, -1) == "DIM_TREE_WOOD") {
+    face = "north";
+} else if (getBlock(1, 0, 0) == "DIM_TREE_LOG_Y" || getBlock(1, 0, 0) == "DIM_TREE_WOOD") {
+    face = "east";
+} else if (getBlock(0, 0, 1) == "DIM_TREE_LOG_Y" || getBlock(0, 0, 1) == "DIM_TREE_WOOD") {
+    face = "south";
+} else fail;
+
+if (getBlock(0, 0, 0) == "minecraft:air" || getBlock(0, 0, 0) == "minecraft:vine") {
+    block(0, 0, 0, "minecraft:cocoa[age=" + age + ",facing=" + face + "]", true);
+}
+

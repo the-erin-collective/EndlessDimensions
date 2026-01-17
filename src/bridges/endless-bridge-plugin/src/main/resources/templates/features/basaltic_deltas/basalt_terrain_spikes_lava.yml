@@ -1,0 +1,39 @@
+id: BASALT_TERRAIN_SPIKES_LAVA
+type: FEATURE
+
+distributor:
+  type: SAMPLER
+  sampler:
+    type: CELLULAR
+    return: CellValue
+    frequency: 0.06
+    salt: 6541
+  threshold: 0.2
+
+locator:
+  type: PATTERN
+  range:
+    min: ${options.yml:bottom-y} + 5
+    max: $options.yml:nether-top-y
+  pattern:
+    type: AND
+    patterns:
+      - type: MATCH
+        block: minecraft:lava
+        offset: 0
+      - type: MATCH_SET
+        offset: -1
+        blocks:
+          - minecraft:blackstone
+          - minecraft:smooth_basalt
+
+structures:
+  distribution:
+    type: CELLULAR
+    return: CellValue
+    frequency: 0.03
+    salt: 7687
+    threshold: 0.1
+  structures:
+    - basalt_terrain_spikes_lava: 3
+    - blank: 1

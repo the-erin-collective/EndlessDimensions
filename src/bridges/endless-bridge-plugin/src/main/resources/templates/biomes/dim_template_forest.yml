@@ -1,0 +1,70 @@
+# Source: docs/terrapacks/TerraOverworldConfig/biomes/land/temperate/oceanic/forest/broadleaf_forest.yml
+# Self-contained template; replace DIM_PAL_SLOT/DIM_PAL_SLOT_STONE when instantiating slots.
+id: dim_template_forest
+type: BIOME
+vanilla: minecraft:forest
+color: 0x67a34d
+
+tags:
+  - LAND_CAVES
+  - USE_RIVER
+
+climate:
+  precipitation: true
+  temperature: 0.8
+  downfall: 0.4
+
+colors:
+  grass: 0x79c05a
+  foliage: 0x59ae30
+  water: 0x1e97f2
+  water-fog: 0x1e97f2
+
+ocean:
+  palette: BLOCK:minecraft:water
+  level: 62
+
+slant-depth: 15
+
+palette:
+  - DIM_PAL_SLOT: 319
+  - DIM_PAL_SLOT_STONE: 7
+  - BLOCK:minecraft:bedrock: -60
+  - BLOCK:minecraft:bedrock: -64
+
+slant:
+  - threshold: 0.8
+    palette:
+      - DIM_PAL_SLOT: 319
+      - DIM_PAL_SLOT_STONE: 7
+      - BLOCK:minecraft:bedrock: -60
+      - BLOCK:minecraft:bedrock: -64
+  - threshold: 0.4
+    palette:
+      - DIM_PAL_SLOT: 319
+      - DIM_PAL_SLOT_STONE: 7
+      - BLOCK:minecraft:bedrock: -60
+      - BLOCK:minecraft:bedrock: -64
+  - threshold: 0.3
+    palette:
+      - DIM_PAL_SLOT_STONE: 319
+      - BLOCK:minecraft:bedrock: -60
+      - BLOCK:minecraft:bedrock: -64
+
+features:
+  flora:
+    - GRASS
+    - POPPY_PATCH
+    - DANDELION_PATCH
+    - ROSE_BUSH_PATCH
+    - PEONY_PATCH
+    - LILAC_PATCH
+    - LILY_OF_THE_VALLEY_PATCH
+    - LEAF_LITTER
+    - BUSH
+  trees:
+    - TEMPERATE_TREES
+    - SPARSE_FALLEN_OAK_TREES
+  landforms:
+    - MOSSY_BOULDERS
+    - SMALL_MOSSY_BOULDER_PATCHES

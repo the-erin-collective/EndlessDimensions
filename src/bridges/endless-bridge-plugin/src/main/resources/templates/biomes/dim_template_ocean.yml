@@ -1,0 +1,29 @@
+# Source: docs/terrapacks/TerraOverworldConfig/biomes/ocean/temperate/ocean.yml
+# Self-contained template; replace DIM_PAL_SLOT/DIM_PAL_SLOT_STONE when instantiating slots.
+id: dim_template_ocean
+type: BIOME
+vanilla: minecraft:ocean
+color: 0x1787d4
+
+tags:
+  - USE_TRENCH
+
+climate:
+  precipitation: true
+  temperature: 0.5
+  downfall: 0.5
+
+colors:
+  water: 0x1787d4
+  water-fog: 0x1787d4
+
+palette:
+  - DIM_PAL_SLOT: 319
+  - DIM_PAL_SLOT_STONE: 7
+  - BLOCK:minecraft:bedrock: -60
+  - BLOCK:minecraft:bedrock: -64
+
+features:
+  landforms:
+    - SPARSE_GIANT_CLAMS
+    - OCEAN_BOULDERS

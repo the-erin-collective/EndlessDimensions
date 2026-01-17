@@ -1,0 +1,20 @@
+id: BETWEEN_END_SHIPS
+type: FEATURE
+
+distributor:
+  type: PADDED_GRID
+  width: DIM_BETWEEN_GRID_WIDTH
+  padding: DIM_BETWEEN_GRID_PADDING
+  salt: 9152
+
+locator:
+  type: RANDOM
+  height:
+    min: ${meta.yml:cloud-y} - 20
+    max: ${meta.yml:cloud-y} + 20
+  amount: DIM_BETWEEN_AMOUNT
+
+structures:
+  distribution:
+    type: CONSTANT
+  structures: DIM_BETWEEN_SHIP_STRUCTURE

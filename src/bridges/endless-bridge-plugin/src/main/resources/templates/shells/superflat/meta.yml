@@ -1,0 +1,18 @@
+# Shell metadata for superflat geometry.
+top-y: 128
+ocean-level: 62
+cloud-y: 128
+deepslate-top: 7
+bedrock-top: 0
+bottom-y: 0
+
+palette-slant-generic:
+  - BLOCK:minecraft:stone: $meta.yml:top-y
+
+palette-underwater:
+  - BLOCK:minecraft:mud: ${meta.yml:ocean-level} - 1
+
+palette-bottom:
+  - BLOCK:minecraft:deepslate: $meta.yml:deepslate-top
+  - BLOCK:minecraft:bedrock: $meta.yml:bedrock-top
+  - BLOCK:minecraft:bedrock: $meta.yml:bottom-y

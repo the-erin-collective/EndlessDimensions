@@ -1,0 +1,12 @@
+# Featureless template biome (no features/structures).
+# Self-contained template; replace DIM_PAL_SLOT/DIM_PAL_SLOT_STONE when instantiating slots.
+id: dim_template_featureless
+type: BIOME
+vanilla: minecraft:plains
+color: 0x91bd59
+
+palette:
+  - DIM_PAL_SLOT: 319
+  - DIM_PAL_SLOT_STONE: 7
+  - BLOCK:minecraft:bedrock: -60
+  - BLOCK:minecraft:bedrock: -64

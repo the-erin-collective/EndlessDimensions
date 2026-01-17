@@ -1,0 +1,47 @@
+# Source: docs/terrapacks/TerraOverworldConfig/biomes/land/unique/mushroom/mushroom_fields.yml
+# Self-contained template; replace DIM_PAL_SLOT/DIM_PAL_SLOT_STONE when instantiating slots.
+id: dim_template_mushroom_fields
+type: BIOME
+vanilla: minecraft:mushroom_fields
+color: 0xdb00ba
+
+tags:
+  - MUSHROOM_CAVES
+  - USE_MUSHROOM_RIVER
+
+climate:
+  precipitation: true
+  temperature: 0.9
+  downfall: 1.0
+
+colors:
+  water: 0x8a8997
+  water-fog: 0x8a8997
+
+slant-depth: 15
+
+palette:
+  - DIM_PAL_SLOT: 319
+  - DIM_PAL_SLOT_STONE: 7
+  - BLOCK:minecraft:bedrock: -60
+  - BLOCK:minecraft:bedrock: -64
+
+slant:
+  - threshold: 0.45
+    palette:
+      - DIM_PAL_SLOT: 319
+      - DIM_PAL_SLOT_STONE: 7
+      - BLOCK:minecraft:bedrock: -60
+      - BLOCK:minecraft:bedrock: -64
+  - threshold: 0.4
+    palette:
+      - DIM_PAL_SLOT_STONE: 319
+      - BLOCK:minecraft:bedrock: -60
+      - BLOCK:minecraft:bedrock: -64
+
+features:
+  trees:
+    - MUSHROOM_DISK_PATCHES
+    - LARGE_MUSHROOMS
+  flora:
+    - SMALL_MUSHROOMS

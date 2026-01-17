@@ -1,0 +1,28 @@
+# Source: docs/terrapacks/Tartarus/biomes/nether/basaltic_deltas.yml
+# Self-contained template; replace DIM_PAL_SLOT/DIM_PAL_SLOT_STONE when instantiating slots.
+id: dim_template_basalt_deltas
+type: BIOME
+vanilla: minecraft:basalt_deltas
+color: 0x4a3e3d
+
+ocean:
+  palette: BLOCK:minecraft:lava
+  level: 32
+
+palette:
+  - BLOCK:minecraft:bedrock: 255
+  - DIM_PAL_SLOT: 245
+  - DIM_PAL_SLOT_STONE: 31
+  - BLOCK:minecraft:bedrock: 5
+  - BLOCK:minecraft:air: -1
+
+features:
+  landforms:
+    - BASALT_COLUMN_LAVA
+    - BASALT_TERRAIN_SPIKES_LAVA
+    - BASALT_TERRAIN_SPIKES
+    - GLOWSTONE_SPIKE
+  flora:
+    - LAVA_BLOCK
+    - MAGMA_LAVA
+    - LAVA_COLUMN

@@ -1,0 +1,59 @@
+# Source: docs/terrapacks/TerraOverworldConfig/biomes/land/polar/ice_cap/plain/ice_spikes.yml
+# Self-contained template; replace DIM_PAL_SLOT/DIM_PAL_SLOT_STONE when instantiating slots.
+id: dim_template_ice_spikes
+type: BIOME
+vanilla: minecraft:ice_spikes
+color: 0xd1e3ef
+
+tags:
+  - LAND_CAVES
+  - ICE_CAVES
+  - USE_FROZEN_RIVER_FROZEN_MARSH
+
+climate:
+  precipitation: true
+  temperature: -0.5
+  temperature-modifier: FROZEN
+  downfall: 0.1
+
+colors:
+  sky: 0xe4f1ff
+  fog: 0xbacddc
+  grass: 0xe9f2e2
+  foliage: 0x757759
+  water: 0x3181ff
+  water-fog: 0x2756ab
+
+slant-depth: 6
+
+palette:
+  - DIM_PAL_SLOT: 319
+  - DIM_PAL_SLOT_STONE: 7
+  - BLOCK:minecraft:bedrock: -60
+  - BLOCK:minecraft:bedrock: -64
+
+slant:
+  - threshold: 0.5
+    palette:
+      - BLOCK:minecraft:packed_ice: 319
+      - DIM_PAL_SLOT_STONE: 7
+      - BLOCK:minecraft:bedrock: -60
+      - BLOCK:minecraft:bedrock: -64
+  - threshold: 0
+    palette:
+      - BLOCK:minecraft:ice: 319
+      - DIM_PAL_SLOT_STONE: 7
+      - BLOCK:minecraft:bedrock: -60
+      - BLOCK:minecraft:bedrock: -64
+
+features:
+  trees:
+    - ICE_SPIKES
+  preprocessors:
+    - ICE_COASTLINE
+  postprocessors:
+    - CEILING_ICICLES
+    - TREE_SNOW
+    - BLEND_SNOW
+  landforms:
+    - OVERHANG_STONE_COLUMNS
