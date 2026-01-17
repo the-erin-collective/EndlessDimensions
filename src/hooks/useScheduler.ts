@@ -1,4 +1,3 @@
-/// <reference types="@epi-studio/moud-sdk" />
 import { Logger } from '../utils/Logger';
 
 // Type definitions for Moud API

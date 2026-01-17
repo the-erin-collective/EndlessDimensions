@@ -1,4 +1,6 @@
-/// <reference types="@epi-studio/moud-sdk" />
+/*
+ * Migration note: validates block/fluid selection and blacklist rules that inform Terra palette generation per docs/terra_custom_dimension_tech_spec.md.
+ */
 import { BlockRegistry } from '../core/BlockRegistry';
 
 // Mock API for testing

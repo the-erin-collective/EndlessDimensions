@@ -8,6 +8,7 @@ group = 'com.moud.trove'
 version = '1.0.0-BETA'
 
 repositories {
+    mavenLocal()
     mavenCentral()
     maven { url 'https://repo.codemc.io/repository/maven-public/' }
     maven { url 'https://mvn.everbuild.org/public' }
@@ -57,8 +58,8 @@ java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(25)
     }
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
 }
 
 test {

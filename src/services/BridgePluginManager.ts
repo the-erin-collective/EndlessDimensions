@@ -80,7 +80,8 @@ export class BridgePluginManager {
             { name: 'Terra', globalName: 'Terra', extensionName: 'Terra' },
             { name: 'Polar', globalName: 'Polar', extensionName: 'Polar' },
             { name: 'Trove', globalName: 'Trove', extensionName: 'Trove' },
-            { name: 'PvP', globalName: 'PvP', extensionName: 'PvP' }
+            { name: 'PvP', globalName: 'PvP', extensionName: 'PvP' },
+            { name: 'Endless', globalName: 'Endless', extensionName: 'Endless' }
         ];
 
         // Wait for Minestom extensions to be loaded
@@ -124,6 +125,56 @@ export class BridgePluginManager {
      */
     private async injectFromJavaRegistries(extensions: Array<{ name: string, globalName: string, extensionName: string }>): Promise<void> {
         console.log('[BridgePluginManager] Attempting to inject facades from Java BridgeRegistry...');
+
+        // Force-load bridge classes to trigger static initializers
+        // This ensures BridgeRegistry.register() calls happen before we check for them
+        try {
+            console.log('[BridgePluginManager] Force-loading bridge classes to trigger static registration...');
+            
+            // Force-load each bridge class to trigger its static initializer
+            if (typeof (globalThis as any).Java !== 'undefined' && (globalThis as any).Java.type) {
+                try {
+                    const pvpBridgeClass = (globalThis as any).Java.type('com.moud.pvp.PvPBridgePlugin');
+                    console.log('[BridgePluginManager] ✓ Force-loaded PvPBridgePlugin');
+                } catch (e: any) {
+                    console.log(`[BridgePluginManager] Could not force-load PvPBridgePlugin: ${e.message || e}`);
+                }
+                
+                try {
+                    const terraBridgeClass = (globalThis as any).Java.type('com.moud.terra.TerraBridgePlugin');
+                    console.log('[BridgePluginManager] ✓ Force-loaded TerraBridgePlugin');
+                } catch (e: any) {
+                    console.log(`[BridgePluginManager] Could not force-load TerraBridgePlugin: ${e.message || e}`);
+                }
+                
+                try {
+                    const polarBridgeClass = (globalThis as any).Java.type('com.moud.polar.PolarBridgePlugin');
+                    console.log('[BridgePluginManager] ✓ Force-loaded PolarBridgePlugin');
+                } catch (e: any) {
+                    console.log(`[BridgePluginManager] Could not force-load PolarBridgePlugin: ${e.message || e}`);
+                }
+                
+                try {
+                    const troveBridgeClass = (globalThis as any).Java.type('com.moud.trove.TroveBridgePlugin');
+                    console.log('[BridgePluginManager] ✓ Force-loaded TroveBridgePlugin');
+                } catch (e: any) {
+                    console.log(`[BridgePluginManager] Could not force-load TroveBridgePlugin: ${e.message || e}`);
+                }
+
+                try {
+                    const endlessBridgeClass = (globalThis as any).Java.type('com.moud.endlessdimensions.EndlessBridgePlugin');
+                    console.log('[BridgePluginManager] ✓ Force-loaded EndlessBridgePlugin');
+                } catch (e: any) {
+                    console.log(`[BridgePluginManager] Could not force-load EndlessBridgePlugin: ${e.message || e}`);
+                }
+            }
+            
+            // Give static initializers a moment to run
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+        } catch (e: any) {
+            console.warn(`[BridgePluginManager] Error during force-loading: ${e.message || e}`);
+        }
 
         for (const extension of extensions) {
             try {

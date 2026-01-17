@@ -1,3 +1,6 @@
 rootProject.name = 'endless-dimensions'
 
 include ':libs:MinestomPvP'
+include ':libs:minestom-ce-extensions'
+
+includeBuild('libs/MinestomPvP')

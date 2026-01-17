@@ -1,9 +1,7 @@
-/// <reference types="@epi-studio/moud-sdk" />
+﻿/// <reference types="@epi-studio/moud-sdk" />
 import { Logger } from '../utils/Logger';
 import { VirtualGridController, SynthesizerGrid, BiomeColumn, WorldType } from '../core/VirtualGridController';
 import { ItemBlockMapper } from '../core/ItemBlockMapper';
-import { BiomeJsonCompiler } from '../core/BiomeJsonCompiler';
-import { DynamicRegistryInjector } from '../core/DynamicRegistryInjector';
 import { EasterEggBridge } from '../core/EasterEggBridge';
 
 export interface ContainerSlot {
@@ -16,7 +14,7 @@ export interface ContainerSlot {
     slotType: 'world_type' | 'base_biome' | 'surface_block' | 'stone_block' | 'liquid_block' | 'tree_logs' | 'tree_leaves' | 'ores' | 'craft';
 }
 
-export interface BiomeSynthesizerContainer {
+export interface BiomeSynthesizerSession {
     playerId: string;
     containerId: string;
     gridController: VirtualGridController;
@@ -28,35 +26,44 @@ export interface BiomeSynthesizerContainer {
 export class BiomeSynthesizerContainer {
     private api: MoudAPI;
     private logger: Logger;
-    private activeContainers: Map<string, BiomeSynthesizerContainer>;
+    private activeContainers: Map<string, BiomeSynthesizerSession>;
+
     private itemBlockMapper: ItemBlockMapper;
-    private biomeCompiler: BiomeJsonCompiler;
-    private registryInjector: DynamicRegistryInjector;
     private easterEggBridge: EasterEggBridge;
     private nextContainerId: number = 1;
 
     // Container layout constants
+    private static readonly CONTAINER_SIZE = 54;
+    private static readonly SLOTS = {
+        WORLD_TYPE: 10,
+        BIOME_BASES: [19, 28, 37, 46],
+        POWER_SLOTS: [3, 4, 5, 6],
+        REPLACEMENT_COLUMNS: [
+            [12, 21, 30, 39, 48, 57],
+            [13, 22, 31, 40, 49, 58],
+            [14, 23, 32, 41, 50, 59],
+            [15, 24, 33, 42, 51, 60]
+        ],
+        OUTPUT: 25
+    };
+    private static readonly REPLACEMENT_ROW_TYPES: Array<'tree_leaves' | 'tree_logs' | 'surface_block' | 'stone_block' | 'ores' | 'liquid_block'> = [
+        'tree_leaves', 'tree_logs', 'surface_block', 'stone_block', 'ores', 'liquid_block'
+    ];
+    private static readonly CRAFT_BUTTON_SLOT = 25;
     private static readonly CONTAINER_WIDTH = 9;
     private static readonly CONTAINER_HEIGHT = 6;
-    private static readonly WORLD_TYPE_ROW = 0;
-    private static readonly CRAFT_BUTTON_ROW = 5;
-    private static readonly CRAFT_BUTTON_SLOT = 45;
 
     constructor(
         api: MoudAPI,
         itemBlockMapper: ItemBlockMapper,
-        biomeCompiler: BiomeJsonCompiler,
-        registryInjector: DynamicRegistryInjector,
         easterEggBridge: EasterEggBridge
     ) {
         this.api = api;
         this.logger = new Logger('BiomeSynthesizerContainer');
         this.activeContainers = new Map();
         this.itemBlockMapper = itemBlockMapper;
-        this.biomeCompiler = biomeCompiler;
-        this.registryInjector = registryInjector;
         this.easterEggBridge = easterEggBridge;
-        
+
         this.initializeEventHandlers();
     }
 
@@ -105,7 +112,7 @@ export class BiomeSynthesizerContainer {
 
             // Create new container
             const containerId = `synthesizer_${this.nextContainerId++}`;
-            const container: BiomeSynthesizerContainer = {
+            const container: BiomeSynthesizerSession = {
                 playerId,
                 containerId,
                 gridController: new VirtualGridController(),
@@ -136,7 +143,7 @@ export class BiomeSynthesizerContainer {
     /**
      * Initialize container slots with proper layout
      */
-    private initializeContainerSlots(container: BiomeSynthesizerContainer): void {
+    private initializeContainerSlots(container: BiomeSynthesizerSession): void {
         const grid = container.gridController.getGrid();
 
         // Initialize world type row (slots 0-4)
@@ -156,12 +163,12 @@ export class BiomeSynthesizerContainer {
         // Initialize columns (slots 10-47)
         for (let col = 0; col < 5; col++) {
             const column = grid.columns[col];
-            
+
             for (let row = 0; row < 7; row++) {
                 const slotId = 10 + (col * 8) + row;
                 const slotType = this.getSlotTypeForPosition(row);
                 const isLocked = !this.isSlotUnlocked(container.gridController, col, slotType);
-                
+
                 const slot: ContainerSlot = {
                     id: slotId,
                     itemId: this.getSlotItemId(column, slotType),
@@ -169,7 +176,7 @@ export class BiomeSynthesizerContainer {
                     displayName: this.getSlotDisplayName(slotType, column),
                     isValid: !isLocked && this.getSlotItemId(column, slotType) !== null,
                     isLocked,
-                    slotType
+                    slotType: slotType as any
                 };
                 container.slots.set(slotId, slot);
             }
@@ -191,7 +198,7 @@ export class BiomeSynthesizerContainer {
     /**
      * Register container with the server
      */
-    private registerContainer(container: BiomeSynthesizerContainer): void {
+    private registerContainer(container: BiomeSynthesizerSession): void {
         try {
             // Register container type
             this.api.containers.registerContainerType({
@@ -212,7 +219,7 @@ export class BiomeSynthesizerContainer {
     /**
      * Create slot definitions for container registration
      */
-    private createSlotDefinitions(container: BiomeSynthesizerContainer): any[] {
+    private createSlotDefinitions(container: BiomeSynthesizerSession): any[] {
         const slotDefinitions: any[] = [];
 
         // Add all slots to definition
@@ -252,7 +259,7 @@ export class BiomeSynthesizerContainer {
      */
     private getSlotIcon(slot: ContainerSlot): string {
         if (slot.isLocked) {
-            return 'minecraft:barrier';
+            return 'minecraft:gray_stained_glass_pane';
         }
         if (slot.itemId) {
             return slot.itemId;
@@ -274,61 +281,61 @@ export class BiomeSynthesizerContainer {
      */
     private getSlotTooltip(slot: ContainerSlot): string[] {
         const tooltips: string[] = [];
-        
+
         if (slot.isLocked) {
-            tooltips.push('§8Locked');
-            tooltips.push('§7Place items in previous slots to unlock');
+            tooltips.push('┬º8Locked');
+            tooltips.push('┬º7Place items in previous slots to unlock');
             return tooltips;
         }
 
         switch (slot.slotType) {
             case 'world_type':
-                tooltips.push('§eWorld Type Slot');
-                tooltips.push('§7Place world type unlocker item:');
-                tooltips.push('§7• Emerald Block → Normal');
-                tooltips.push('§7• Ancient Debris → Nether');
-                tooltips.push('§7• Eye of Ender → The End');
-                tooltips.push('§7• Diamond Block → Superflat');
-                tooltips.push('§7• Netherite Block → Amplified');
+                tooltips.push('┬ºeWorld Type Slot');
+                tooltips.push('┬º7Place world type unlocker item:');
+                tooltips.push('┬º7ΓÇó Emerald Block ΓåÆ Normal');
+                tooltips.push('┬º7ΓÇó Ancient Debris ΓåÆ Nether');
+                tooltips.push('┬º7ΓÇó Eye of Ender ΓåÆ The End');
+                tooltips.push('┬º7ΓÇó Diamond Block ΓåÆ Superflat');
+                tooltips.push('┬º7ΓÇó Netherite Block ΓåÆ Amplified');
                 break;
             case 'base_biome':
-                tooltips.push('§eBase Biome Slot');
-                tooltips.push('§7Place biome item (sapling/fungus)');
-                tooltips.push('§7Unlocks other slots in this column');
+                tooltips.push('┬ºeBase Biome Slot');
+                tooltips.push('┬º7Place biome item (sapling/fungus)');
+                tooltips.push('┬º7Unlocks other slots in this column');
                 break;
             case 'surface_block':
-                tooltips.push('§eSurface Block Slot');
-                tooltips.push('§7Replace surface blocks in biome');
+                tooltips.push('┬ºeSurface Block Slot');
+                tooltips.push('┬º7Replace surface blocks in biome');
                 break;
             case 'stone_block':
-                tooltips.push('§eStone Block Slot');
-                tooltips.push('§7Replace stone layers in biome');
+                tooltips.push('┬ºeStone Block Slot');
+                tooltips.push('┬º7Replace stone layers in biome');
                 break;
             case 'liquid_block':
-                tooltips.push('§eLiquid Block Slot');
-                tooltips.push('§7Replace liquids in biome');
+                tooltips.push('┬ºeLiquid Block Slot');
+                tooltips.push('┬º7Replace liquids in biome');
                 break;
             case 'tree_logs':
-                tooltips.push('§eTree Logs Slot');
-                tooltips.push('§7Replace tree logs in biome');
+                tooltips.push('┬ºeTree Logs Slot');
+                tooltips.push('┬º7Replace tree logs in biome');
                 break;
             case 'tree_leaves':
-                tooltips.push('§eTree Leaves Slot');
-                tooltips.push('§7Replace tree leaves in biome');
+                tooltips.push('┬ºeTree Leaves Slot');
+                tooltips.push('┬º7Replace tree leaves in biome');
                 break;
             case 'ores':
-                tooltips.push('§eOres Slot');
-                tooltips.push('§7Replace ores in biome');
+                tooltips.push('┬ºeOres Slot');
+                tooltips.push('┬º7Replace ores in biome');
                 break;
             case 'craft':
-                tooltips.push('§eCraft Dimension');
-                tooltips.push('§7Click to create dimension');
-                tooltips.push('§7from your configuration');
+                tooltips.push('┬ºeCraft Dimension');
+                tooltips.push('┬º7Click to create dimension');
+                tooltips.push('┬º7from your configuration');
                 break;
         }
 
         if (slot.itemId && !slot.isLocked) {
-            tooltips.push(`§7Current: ${slot.displayName}`);
+            tooltips.push(`┬º7Current: ${slot.displayName}`);
         }
 
         return tooltips;
@@ -337,7 +344,7 @@ export class BiomeSynthesizerContainer {
     /**
      * Send container open packet to client
      */
-    private sendContainerOpenPacket(playerId: string, container: BiomeSynthesizerContainer): void {
+    private sendContainerOpenPacket(playerId: string, container: BiomeSynthesizerSession): void {
         try {
             // Send container open packet
             this.api.network.sendPacket(playerId, {
@@ -426,7 +433,7 @@ export class BiomeSynthesizerContainer {
     /**
      * Handle pickup click (left-click)
      */
-    private handlePickupClick(container: BiomeSynthesizerContainer, slot: ContainerSlot, carriedItem: any): void {
+    private handlePickupClick(container: BiomeSynthesizerSession, slot: ContainerSlot, carriedItem: any): void {
         if (slot.isLocked) {
             return;
         }
@@ -452,7 +459,7 @@ export class BiomeSynthesizerContainer {
     /**
      * Handle quick move click (shift-click)
      */
-    private handleQuickMoveClick(container: BiomeSynthesizerContainer, slot: ContainerSlot, carriedItem: any): void {
+    private handleQuickMoveClick(container: BiomeSynthesizerSession, slot: ContainerSlot, carriedItem: any): void {
         if (slot.isLocked) {
             return;
         }
@@ -466,7 +473,7 @@ export class BiomeSynthesizerContainer {
     /**
      * Handle swap click (right-click)
      */
-    private handleSwapClick(container: BiomeSynthesizerContainer, slot: ContainerSlot, carriedItem: any): void {
+    private handleSwapClick(container: BiomeSynthesizerSession, slot: ContainerSlot, carriedItem: any): void {
         if (slot.isLocked) {
             return;
         }
@@ -484,7 +491,7 @@ export class BiomeSynthesizerContainer {
     /**
      * Handle default click
      */
-    private handleDefaultClick(container: BiomeSynthesizerContainer, slot: ContainerSlot, carriedItem: any): void {
+    private handleDefaultClick(container: BiomeSynthesizerSession, slot: ContainerSlot, carriedItem: any): void {
         if (slot.isLocked) {
             return;
         }
@@ -518,13 +525,13 @@ export class BiomeSynthesizerContainer {
     /**
      * Place item in slot
      */
-    private placeItemInSlot(container: BiomeSynthesizerContainer, slot: ContainerSlot, itemId: string): void {
+    private placeItemInSlot(container: BiomeSynthesizerSession, slot: ContainerSlot, itemId: string): void {
         const column = Math.floor((slot.id - 10) / 8);
         const row = (slot.id - 10) % 8;
 
         // Update grid controller
         const success = container.gridController.placeItem(column, slot.slotType, itemId);
-        
+
         if (success) {
             // Update slot
             slot.itemId = itemId;
@@ -544,7 +551,7 @@ export class BiomeSynthesizerContainer {
     /**
      * Remove item from slot
      */
-    private removeItemFromSlot(container: BiomeSynthesizerContainer, slot: ContainerSlot): void {
+    private removeItemFromSlot(container: BiomeSynthesizerSession, slot: ContainerSlot): void {
         const column = Math.floor((slot.id - 10) / 8);
         const row = (slot.id - 10) % 8;
 
@@ -568,10 +575,10 @@ export class BiomeSynthesizerContainer {
     /**
      * Handle craft button click
      */
-    private async handleCraftClick(container: BiomeSynthesizerContainer): Promise<void> {
+    private async handleCraftClick(container: BiomeSynthesizerSession): Promise<void> {
         try {
             const grid = container.gridController.getGrid();
-            
+
             if (!container.gridController.canCraft()) {
                 this.sendErrorMessage(container.playerId, 'You need at least one biome defined to craft a dimension!');
                 return;
@@ -581,9 +588,11 @@ export class BiomeSynthesizerContainer {
 
             // Create Easter Egg bridge
             const seedKey = await this.easterEggBridge.createEasterEggBridge(grid, container.playerId);
-            
+
             if (seedKey) {
-                this.sendSuccessMessage(container.playerId, `Dimension created! Use book "${seedKey}" to travel there.`);
+                // Give player the physical Dimension Blueprint book
+                this.givePlayerDimensionBook(container.playerId, grid, seedKey);
+                this.sendSuccessMessage(container.playerId, `Dimension created! Check your inventory for the Dimension Blueprint.`);
                 this.closeContainer(container.playerId);
             } else {
                 this.sendErrorMessage(container.playerId, 'Failed to create dimension. Please try again.');
@@ -596,9 +605,44 @@ export class BiomeSynthesizerContainer {
     }
 
     /**
+     * Give player a physical Dimension Blueprint book with dimension configuration
+     */
+    private givePlayerDimensionBook(playerId: string, grid: SynthesizerGrid, seedKey: string): void {
+        try {
+            const definedBiomes = grid.columns.filter(col => col.unlocked && col.enabled && col.baseBiome !== null);
+            const biomeCount = definedBiomes.length;
+            const worldTypeName = grid.worldType || 'Unknown';
+            const escapedSeedKey = seedKey.replace(/"/g, '\\"');
+
+            // Build lore for the book item
+            const loreLines = [
+                `§7World Type: §e${worldTypeName}`,
+                `§7Biomes: §a${biomeCount}`,
+                `§7Seed: §b${escapedSeedKey}`,
+                `§dRight-click to travel!`
+            ];
+            const loreNbt = loreLines.map(line => `'{"text":"${line}","italic":false}'`).join(',');
+
+            // Build /give command for written book with custom NBT
+            const giveCommand = `/give ${playerId} minecraft:written_book{` +
+                `title:"Dimension Blueprint",` +
+                `author:"Dimension Crafter",` +
+                `pages:['{"text":"Dimension Blueprint\\n\\nWorld: ${worldTypeName}\\nBiomes: ${biomeCount}\\nSeed: ${escapedSeedKey}\\n\\n§dRight-click to travel!"}'],` +
+                `display:{Name:'{"text":"§bDimension Blueprint","italic":false}',Lore:[${loreNbt}]},` +
+                `dimension_seed:"${escapedSeedKey}"} 1`;
+
+            (this.api as any).server.executeCommand(giveCommand);
+            this.logger.info(`Gave Dimension Blueprint book to player ${playerId} with seed ${seedKey}`);
+        } catch (error) {
+            this.logger.error(`Error giving dimension book to player ${playerId}:`, error);
+            this.sendSuccessMessage(playerId, `Dimension created with seed: ${seedKey}`);
+        }
+    }
+
+    /**
      * Update craft button state
      */
-    private updateCraftButton(container: BiomeSynthesizerContainer): void {
+    private updateCraftButton(container: BiomeSynthesizerSession): void {
         const craftSlot = container.slots.get(BiomeSynthesizerContainer.CRAFT_BUTTON_SLOT);
         if (craftSlot) {
             craftSlot.isValid = container.gridController.canCraft();
@@ -608,7 +652,7 @@ export class BiomeSynthesizerContainer {
     /**
      * Unlock all slots in a column
      */
-    private unlockColumnSlots(container: BiomeSynthesizerContainer, column: number): void {
+    private unlockColumnSlots(container: BiomeSynthesizerSession, column: number): void {
         for (let row = 1; row < 7; row++) {
             const slotId = 10 + (column * 8) + row;
             const slot = container.slots.get(slotId);
@@ -621,7 +665,7 @@ export class BiomeSynthesizerContainer {
     /**
      * Lock all slots in a column (except base biome)
      */
-    private lockColumnSlots(container: BiomeSynthesizerContainer, column: number): void {
+    private lockColumnSlots(container: BiomeSynthesizerSession, column: number): void {
         for (let row = 1; row < 7; row++) {
             const slotId = 10 + (column * 8) + row;
             const slot = container.slots.get(slotId);
@@ -705,7 +749,7 @@ export class BiomeSynthesizerContainer {
     private getSlotDisplayName(slotType: string, column: BiomeColumn): string {
         const itemId = this.getSlotItemId(column, slotType);
         if (itemId) {
-            return itemId.replace('minecraft:', '').replace(/_/g, ' ').split(' ').map(word => 
+            return itemId.replace('minecraft:', '').replace(/_/g, ' ').split(' ').map(word =>
                 word.charAt(0).toUpperCase() + word.slice(1)
             ).join(' ');
         }
@@ -762,7 +806,7 @@ export class BiomeSynthesizerContainer {
 
         for (const [playerId, container] of this.activeContainers.entries()) {
             const ageMinutes = (now - container.lastUpdate) / (1000 * 60);
-            
+
             if (ageMinutes > maxAgeMinutes) {
                 this.closeContainer(playerId);
                 cleanedCount++;

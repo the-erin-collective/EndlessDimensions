@@ -1,1 +1,4 @@
 rootProject.name = 'pvp-bridge-plugin'
+
+include ':MinestomPvP'
+project(':MinestomPvP').projectDir = file('D:/dev/github/EndlessDimensions/libs/MinestomPvP')

@@ -1,4 +1,3 @@
-/// <reference types="@epi-studio/moud-sdk" />
 import { Logger } from './Logger';
 import { DATA_COMPONENTS } from './NetworkConstants';
 

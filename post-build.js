@@ -142,6 +142,77 @@ async function postBuild() {
         console.log('  ⚠ Terra bridge plugin not built. Run: cd src/bridges/terra-bridge-plugin && ./gradlew shadowJar');
     }
 
+    // Copy Endless bridge plugin if built
+    const endlessPluginDir = path.join(projectRoot, 'src', 'bridges', 'endless-bridge-plugin');
+    const endlessBuildDir = path.join(endlessPluginDir, 'build', 'libs');
+
+    if (fs.existsSync(endlessBuildDir)) {
+        if (!fs.existsSync(destExtensionsDir)) {
+            await fs.promises.mkdir(destExtensionsDir, { recursive: true });
+        }
+
+        const endlessJars = await fs.promises.readdir(endlessBuildDir);
+        for (const jar of endlessJars) {
+            if (jar.startsWith('moud-endless-bridge') && jar.endsWith('.jar') && !jar.includes('-sources.jar') && !jar.includes('-javadoc.jar')) {
+                const srcPath = path.join(endlessBuildDir, jar);
+                const destPath = path.join(destExtensionsDir, jar);
+                await fs.promises.copyFile(srcPath, destPath);
+                console.log(`  Included Endless bridge plugin ${jar} in extensions/`);
+            }
+        }
+    } else {
+        console.log('  Endless bridge plugin not built. Run: cd src/bridges/endless-bridge-plugin && ./gradlew shadowJar');
+    }
+
+    // Copy Base bridge plugin if built
+    const basePluginDir = path.join(projectRoot, 'src', 'bridges', 'base-bridge-plugin');
+    const baseBuildDir = path.join(basePluginDir, 'build', 'libs');
+
+    if (fs.existsSync(baseBuildDir)) {
+        if (!fs.existsSync(destExtensionsDir)) {
+            await fs.promises.mkdir(destExtensionsDir, { recursive: true });
+        }
+
+        const baseJars = await fs.promises.readdir(baseBuildDir);
+        for (const jar of baseJars) {
+            if (jar.startsWith('moud-base-bridge') && jar.endsWith('.jar') && !jar.includes('-sources.jar') && !jar.includes('-javadoc.jar')) {
+                const srcPath = path.join(baseBuildDir, jar);
+                const destPath = path.join(destExtensionsDir, jar);
+                await fs.promises.copyFile(srcPath, destPath);
+                console.log(`  Included Base bridge plugin ${jar} in extensions/`);
+            }
+        }
+    } else {
+        console.log('  Base bridge plugin not built. Run: cd src/bridges/base-bridge-plugin && ./gradlew shadowJar');
+    }
+
+    // Sync Terra base packs into the Terra extension data folder
+    const terraPacksSrc = path.join(projectRoot, 'docs', 'terrapacks');
+    const terraPacksDest = path.join(destExtensionsDir, 'terra-bridge-plugin', 'packs');
+
+    const packMappings = [
+        { src: path.join(terraPacksSrc, 'TerraOverworldConfig'), dest: path.join(terraPacksDest, 'terra_overworld') },
+        { src: path.join(terraPacksSrc, 'Tartarus'), dest: path.join(terraPacksDest, 'terra_nether') },
+        { src: path.join(terraPacksSrc, 'ReimagEND'), dest: path.join(terraPacksDest, 'terra_end') }
+    ];
+
+    const copyPack = async (srcDir, destDir) => {
+        if (!fs.existsSync(srcDir)) {
+            console.log(`  Missing Terra pack source: ${srcDir}`);
+            return;
+        }
+        await fs.promises.mkdir(destDir, { recursive: true });
+        await fs.promises.cp(srcDir, destDir, {
+            recursive: true,
+            filter: (src) => !src.includes(`${path.sep}.git${path.sep}`) && !src.endsWith(`${path.sep}.git`)
+        });
+        console.log(`  Synced Terra pack ${srcDir} -> ${destDir}`);
+    };
+
+    for (const mapping of packMappings) {
+        await copyPack(mapping.src, mapping.dest);
+    }
+
     // Copy Polar bridge plugin if built
     const polarPluginPath = path.join(__dirname, 'src', 'bridges', 'polar-bridge-plugin', 'build', 'libs', 'moud-polar-bridge-1.0.0-BETA.jar');
     if (fs.existsSync(polarPluginPath)) {
@@ -164,6 +235,22 @@ async function postBuild() {
         console.log('  ✓ Included PvP bridge plugin moud-pvp-bridge-1.0.0-BETA.jar in extensions/');
     } else {
         console.log('  ⚠ PvP bridge plugin not built. Run: cd src/bridges/pvp-bridge-plugin && ./gradlew shadowJar');
+    }
+
+    // CRITICAL: Copy the updated Moud server JAR to replace the old one
+    const serverJarPath = path.join(__dirname, 'server', 'moud-server.jar');
+    if (fs.existsSync(serverJarPath)) {
+        const destServerPath = path.join(tempDir, 'server', 'moud-server.jar');
+        const destServerDir = path.dirname(destServerPath);
+        
+        if (!fs.existsSync(destServerDir)) {
+            await fs.promises.mkdir(destServerDir, { recursive: true });
+        }
+        
+        await fs.promises.copyFile(serverJarPath, destServerPath);
+        console.log('  ✓ Updated Moud server JAR with new build');
+    } else {
+        console.log('  ⚠ Moud server JAR not found at:', serverJarPath);
     }
 
     // Copy Trove bridge plugin if built

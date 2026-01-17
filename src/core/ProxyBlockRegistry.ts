@@ -1,4 +1,3 @@
-/// <reference types="@epi-studio/moud-sdk" />
 import { Logger } from '../utils/Logger';
 import { getFileSystemManager } from '../hooks/useFileSystem';
 
@@ -344,8 +343,8 @@ export class ProxyBlockRegistry {
    * Place a proxy block with custom type
    */
   public async placeBlock(
-    position: Vec3, 
-    blockTypeId: string, 
+    position: Vec3,
+    blockTypeId: string,
     placedBy: string = "unknown"
   ): Promise<{ success: boolean; error?: string }> {
     try {
@@ -436,7 +435,7 @@ export class ProxyBlockRegistry {
   private async createDisplayEntity(position: Vec3, blockType: BlockTypeDefinition): Promise<void> {
     try {
       const entityId = `proxy_block_${Date.now()}_${Math.random()}`;
-      
+
       // Create display entity NBT
       const displayNBT = {
         id: "minecraft:display",
@@ -466,7 +465,7 @@ export class ProxyBlockRegistry {
 
       // Apply color if specified
       if (blockType.color) {
-        displayNBT.color = blockType.color;
+        (displayNBT as any).color = blockType.color;
       }
 
       // Summon display entity
@@ -490,7 +489,7 @@ export class ProxyBlockRegistry {
   public getBlockType(position: Vec3): BlockTypeDefinition | null {
     try {
       const positionKey = this.getPositionKey(position);
-      
+
       // Check global state first
       if (api.state) {
         const blocks = api.state.get("proxyBlocks") || {};
@@ -571,7 +570,7 @@ export class ProxyBlockRegistry {
     try {
       const positionKey = this.getPositionKey(position);
       const entityId = this.displayEntities.get(positionKey);
-      
+
       if (entityId) {
         const command = `/kill @e[type=minecraft:display,tag=endless_proxy]`;
         await api.server.executeCommand(command);
@@ -589,7 +588,7 @@ export class ProxyBlockRegistry {
   private async removeBlockMetadata(position: Vec3): Promise<void> {
     try {
       const positionKey = this.getPositionKey(position);
-      
+
       if (api.state) {
         const currentBlocks = api.state.get("proxyBlocks") || {};
         delete currentBlocks[positionKey];
@@ -675,8 +674,8 @@ export function getProxyBlockRegistry(): ProxyBlockRegistry {
  * Convenience function to place a custom block
  */
 export async function placeCustomBlock(
-  position: Vec3, 
-  blockTypeId: string, 
+  position: Vec3,
+  blockTypeId: string,
   placedBy?: string
 ): Promise<{ success: boolean; error?: string }> {
   const registry = getProxyBlockRegistry();

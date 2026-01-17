@@ -2,7 +2,10 @@
   "compilerOptions": {
     "target": "ES2020",
     "module": "commonjs",
-    "lib": ["ES2020", "DOM"],
+    "lib": [
+      "ES2020",
+      "DOM"
+    ],
     "outDir": "./dist",
     "rootDir": "./src",
     "strict": false,
@@ -16,7 +19,12 @@
     "emitDecoratorMetadata": true,
     "noImplicitAny": false,
     "noImplicitReturns": false,
-    "noImplicitThis": false
+    "noImplicitThis": false,
+    "baseUrl": ".",
+    "typeRoots": [
+      "./node_modules/@types",
+      "./src/types"
+    ],
   },
   "include": [
     "src/**/*"
@@ -24,45 +32,6 @@
   "exclude": [
     "node_modules",
     "dist",
-    "src/core/ItemBlockMapper.ts",
-    "src/core/ExperimentalBlockRegistry.ts",
-    "src/gui/BiomeSynthesizerContainer.ts",
-    "src/gui/BiomeSynthesizerGUI.ts",
-    "src/utils/ComponentExtractor.ts",
-    "src/utils/NetworkConstants.ts",
-    "src/worldgen/BiomeGenerator.ts",
-    "src/worldgen/StructureGenerator.ts",
-    "src/worldgen/WorldFeatureIntegration.ts",
-    "src/core/BaseDataPackCreator.ts",
-    "src/core/BiomeSynthesizerBlock.ts",
-    "src/core/BookDataBridge.ts",
-    "src/core/DataMapBehaviorSystem.ts",
-    "src/core/DimensionDataManager.ts",
-    "src/core/DimensionJsonInjector.ts",
-    "src/core/DimensionRegistryBridge.ts",
-    "src/core/DynamicRegistryInjector.ts",
-    "src/core/EasterEggBridge.ts",
-    "src/core/InventoryManager.ts",
-    "src/core/JsonInjectionSystem.ts",
-    "src/core/MoudObserver.ts",
-    "src/core/PacketInterceptor.ts",
-    "src/core/ProxyBlockRegistry.ts",
-    "src/core/SpatialPortalScanner.ts",
-    "src/core/StateObserver.ts",
-    "src/effects/ParticleEffects.ts",
-    "src/enhanced/CustomBlockRegistry.ts",
-    "src/enhanced/ParticleSystem.ts",
-    "src/enhanced/SoundSystem.ts",
-    "src/events/SynthesizerGUIHandler.ts",
-    "src/hooks/useDataPackSync.ts",
-    "src/hooks/useFileSystem.ts",
-    "src/hooks/useMaudio.ts",
-    "src/hooks/usePacketPipe.ts",
-    "src/hooks/useScheduler.ts",
-    "src/main-packet.ts",
-    "src/optimization/PerformanceOptimization.ts",
-    "src/testing/IntegrationTesting.ts",
-    "src/ui/UserFeedback.ts",
-    "src/bridges/**/examples/**/*"
+    "src/bridges"
   ]
 }

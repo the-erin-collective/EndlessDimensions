@@ -1,9 +1,7 @@
-/// <reference types="@epi-studio/moud-sdk" />
+﻿/// <reference types="@epi-studio/moud-sdk" />
 import { Logger } from '../utils/Logger';
 import { VirtualGridController, SynthesizerGrid, BiomeColumn, WorldType } from '../core/VirtualGridController';
 import { ItemBlockMapper } from '../core/ItemBlockMapper';
-import { BiomeJsonCompiler } from '../core/BiomeJsonCompiler';
-import { DynamicRegistryInjector } from '../core/DynamicRegistryInjector';
 import { EasterEggBridge } from '../core/EasterEggBridge';
 
 export interface SlotData {
@@ -26,8 +24,6 @@ export class BiomeSynthesizerGUI {
     private logger: Logger;
     private activeGUIs: Map<string, GUIData>;
     private itemBlockMapper: ItemBlockMapper;
-    private biomeCompiler: BiomeJsonCompiler;
-    private registryInjector: DynamicRegistryInjector;
     private easterEggBridge: EasterEggBridge;
 
     // GUI Layout Constants
@@ -35,30 +31,26 @@ export class BiomeSynthesizerGUI {
     private static readonly COLUMNS = 5; // 5 columns
     private static readonly SLOTS_PER_COLUMN = 7; // world_type, base_biome, surface_block, stone_block, liquid_block, tree_logs, tree_leaves, ores
     private static readonly CRAFT_BUTTON_SLOT = 45;
-    
+
     // Slot mapping
     private getSlotForPosition(column: number, row: number): number {
-        if (column < 0 || column >= this.COLUMNS || row < 0 || row >= this.SLOTS_PER_COLUMN) {
+        if (column < 0 || column >= BiomeSynthesizerGUI.COLUMNS || row < 0 || row >= BiomeSynthesizerGUI.SLOTS_PER_COLUMN) {
             return -1;
         }
-        return 10 + (column * this.SLOTS_PER_COLUMN) + row;
+        return 10 + (column * BiomeSynthesizerGUI.SLOTS_PER_COLUMN) + row;
     }
 
     constructor(
         api: MoudAPI,
         itemBlockMapper: ItemBlockMapper,
-        biomeCompiler: BiomeJsonCompiler,
-        registryInjector: DynamicRegistryInjector,
         easterEggBridge: EasterEggBridge
     ) {
         this.api = api;
         this.logger = new Logger('BiomeSynthesizerGUI');
         this.activeGUIs = new Map();
         this.itemBlockMapper = itemBlockMapper;
-        this.biomeCompiler = biomeCompiler;
-        this.registryInjector = registryInjector;
         this.easterEggBridge = easterEggBridge;
-        
+
         this.initializeEventHandlers();
     }
 
@@ -66,17 +58,21 @@ export class BiomeSynthesizerGUI {
      * Initialize event handlers for synthesizer block interactions
      */
     private initializeEventHandlers(): void {
-        // Listen for synthesizer block right-click events
-        this.api.events.on('synthesizer_block_right_click', (event) => {
-            this.handleSynthesizerBlockClick(event.playerId, event.position, event.blockState);
-        });
+        if (this.api.events && this.api.events.on) {
+            // Listen for synthesizer block right-click events
+            this.api.events.on('synthesizer_block_right_click', (event) => {
+                this.handleSynthesizerBlockClick(event.playerId, event.position, event.blockState);
+            });
 
-        // Listen for synthesizer block break events
-        this.api.events.on('synthesizer_block_break', (event) => {
-            this.handleSynthesizerBlockBreak(event.playerId, event.position, event.blockState);
-        });
+            // Listen for synthesizer block break events
+            this.api.events.on('synthesizer_block_break', (event) => {
+                this.handleSynthesizerBlockBreak(event.playerId, event.position, event.blockState);
+            });
 
-        this.logger.info('Initialized Biome Synthesizer GUI event handlers');
+            this.logger.info('Initialized Biome Synthesizer GUI event handlers');
+        } else {
+            this.logger.warn('Event system not available - GUI interactions disabled');
+        }
     }
 
     /**
@@ -85,7 +81,7 @@ export class BiomeSynthesizerGUI {
     private handleSynthesizerBlockClick(playerId: string, position: any, blockState: any): void {
         try {
             this.logger.info(`Opening Biome Synthesizer GUI for player: ${playerId}`);
-            
+
             const guiData = this.ensurePlayerGUIData(playerId);
             guiData.isOpen = true;
             guiData.lastUpdate = Date.now();
@@ -104,7 +100,7 @@ export class BiomeSynthesizerGUI {
     private handleSynthesizerBlockBreak(playerId: string, position: any, blockState: any): void {
         try {
             this.logger.info(`Biome Synthesizer block broken by player: ${playerId}`);
-            
+
             // Close GUI if it's open for this player
             const guiData = this.activeGUIs.get(playerId);
             if (guiData && guiData.isOpen) {
@@ -132,8 +128,10 @@ export class BiomeSynthesizerGUI {
             this.initializeSlots(guiData, grid);
 
             // Send container open packet
-            this.api.server.executeCommand(`/tellraw ${playerId} {"text":"Opening Biome Synthesizer...","color":"aqua"}`);
-            
+            if (this.api.server?.executeCommand) {
+                this.api.server.executeCommand(`/tellraw ${playerId} {"text":"Opening Biome Synthesizer...","color":"aqua"}`);
+            }
+
             // Note: In a real implementation, this would use the container system
             // For now, we'll simulate the GUI with chat messages
             this.simulateGUIOpen(playerId, grid, worldTypeConfigs);
@@ -151,7 +149,7 @@ export class BiomeSynthesizerGUI {
         guiData.slots.clear();
 
         // Initialize world type row (slots 0-4)
-        for (let i = 0; i < this.WORLD_TYPE_SLOTS; i++) {
+        for (let i = 0; i < BiomeSynthesizerGUI.WORLD_TYPE_SLOTS; i++) {
             const slot = this.getSlotForPosition(i, 0);
             const slotData: SlotData = {
                 itemId: null,
@@ -163,12 +161,13 @@ export class BiomeSynthesizerGUI {
         }
 
         // Initialize column slots
-        for (let col = 0; col < this.COLUMNS; col++) {
+        for (let col = 0; col < BiomeSynthesizerGUI.COLUMNS; col++) {
             const column = grid.columns[col];
-            
-            for (let row = 1; row < this.SLOTS_PER_COLUMN; row++) {
+
+            for (let row = 1; row < BiomeSynthesizerGUI.SLOTS_PER_COLUMN; row++) {
                 const slot = this.getSlotForPosition(col, row);
-                const slotData = this.createSlotData(column, row, column);
+                // Fix: pass the correct columnData (BiomeColumn)
+                const slotData = this.createSlotData(col, row, grid.columns[col]);
                 guiData.slots.set(slot, slotData);
             }
         }
@@ -241,7 +240,7 @@ export class BiomeSynthesizerGUI {
      */
     private getBlockDisplayName(itemId: string): string {
         if (!itemId) return 'Empty';
-        return itemId.replace('minecraft:', '').replace(/_/g, ' ').split(' ').map(word => 
+        return itemId.replace('minecraft:', '').replace(/_/g, ' ').split(' ').map(word =>
             word.charAt(0).toUpperCase() + word.slice(1)
         ).join(' ');
     }
@@ -251,44 +250,46 @@ export class BiomeSynthesizerGUI {
      */
     private simulateGUIOpen(playerId: string, grid: SynthesizerGrid, worldTypeConfigs: any): void {
         try {
+            if (!this.api.server?.executeCommand) return;
+
             // Send GUI layout information
             this.api.server.executeCommand(`/tellraw ${playerId} {"text":"=== BIOME SYNTHESIZER ===","color":"gold","bold":true}`);
 
             // Show world type row
-            let worldTypeRow = '§eWorld Types:§r ';
-            for (let i = 0; i < this.WORLD_TYPE_SLOTS; i++) {
+            let worldTypeRow = '┬ºeWorld Types:┬ºr ';
+            for (let i = 0; i < BiomeSynthesizerGUI.WORLD_TYPE_SLOTS; i++) {
                 const slot = this.getSlotForPosition(i, 0);
                 const slotData = this.getSlotDataForPlayer(playerId, slot);
-                const status = slotData.isValid ? '§a' : '§8';
-                const item = slotData.itemId ? `§f${slotData.displayName}§r` : '§7Empty§r';
+                const status = slotData.isValid ? '┬ºa' : '┬º8';
+                const item = slotData.itemId ? `┬ºf${slotData.displayName}┬ºr` : '┬º7Empty┬ºr';
                 worldTypeRow += `${status}[${i}] ${item}  `;
             }
             this.api.server.executeCommand(`/tellraw ${playerId} {"text":"${worldTypeRow}","color":"white"}`);
 
             // Show columns
-            for (let col = 0; col < this.COLUMNS; col++) {
+            for (let col = 0; col < BiomeSynthesizerGUI.COLUMNS; col++) {
                 const column = grid.columns[col];
                 const isUnlocked = column.unlocked;
-                const columnColor = isUnlocked ? '§a' : '§8';
-                const columnTitle = `§eColumn ${col + 1} (${this.getWorldTypeDisplayName(col)}):§r `;
-                
+                const columnColor = isUnlocked ? '┬ºa' : '┬º8';
+                const columnTitle = `┬ºeColumn ${col + 1} (${this.getWorldTypeDisplayName(col)}):┬ºr `;
+
                 this.api.server.executeCommand(`/tellraw ${playerId} {"text":"${columnTitle}","color":"white"}`);
-                
-                for (let row = 1; row < this.SLOTS_PER_COLUMN; row++) {
+
+                for (let row = 1; row < BiomeSynthesizerGUI.SLOTS_PER_COLUMN; row++) {
                     const slot = this.getSlotForPosition(col, row);
                     const slotData = this.getSlotDataForPlayer(playerId, slot);
                     const rowNames = ['Base Biome', 'Surface', 'Stone', 'Liquid', 'Logs', 'Leaves', 'Ores'];
                     const rowName = rowNames[row - 1];
-                    const status = slotData.isValid ? '§a' : '§8';
-                    const item = slotData.itemId ? `§f${slotData.displayName}§r` : '§7Empty§r';
-                    
-                    this.api.server.executeCommand(`/tellraw ${playerId} {"text":"  ${columnColor}${status}[${row}] §b${rowName}:§r ${item}","color":"white"}`);
+                    const status = slotData.isValid ? '┬ºa' : '┬º8';
+                    const item = slotData.itemId ? `┬ºf${slotData.displayName}┬ºr` : '┬º7Empty┬ºr';
+
+                    this.api.server.executeCommand(`/tellraw ${playerId} {"text":"  ${columnColor}${status}[${row}] ┬ºb${rowName}:┬ºr ${item}","color":"white"}`);
                 }
             }
 
             // Show controls
-            this.api.server.executeCommand(`/tellraw ${playerId} {"text":"\\n§eControls:§r §7Right-click slots to place items | §aShift+Right-click to clear slots§r","color":"gray"}`);
-            this.api.server.executeCommand(`/tellraw ${playerId} {"text":"§7[Craft]§r button when ready - creates dimension from your configuration!","color":"yellow"}`);
+            this.api.server.executeCommand(`/tellraw ${playerId} {"text":"\\n┬ºeControls:┬ºr ┬º7Right-click slots to place items | ┬ºaShift+Right-click to clear slots┬ºr","color":"gray"}`);
+            this.api.server.executeCommand(`/tellraw ${playerId} {"text":"┬º7[Craft]┬ºr button when ready - creates dimension from your configuration!","color":"yellow"}`);
 
         } catch (error) {
             this.logger.error(`Error simulating GUI for player ${playerId}:`, error);
@@ -341,15 +342,17 @@ export class BiomeSynthesizerGUI {
         try {
             const guiData = this.ensurePlayerGUIData(playerId);
             const slot = this.getSlotDataForPlayer(playerId, slotId);
-            
+
             if (!slot.isValid) {
-                this.api.server.executeCommand(`/tellraw ${playerId} {"text":"This slot is locked!","color":"red"}`);
+                if (this.api.server?.executeCommand) {
+                    this.api.server.executeCommand(`/tellraw ${playerId} {"text":"This slot is locked!","color":"red"}`);
+                }
                 return false;
             }
 
             // Determine which column and row this slot belongs to
-            const column = Math.floor((slotId - 10) / this.SLOTS_PER_COLUMN);
-            const row = (slotId - 10) % this.SLOTS_PER_COLUMN;
+            const column = Math.floor((slotId - 10) / BiomeSynthesizerGUI.SLOTS_PER_COLUMN);
+            const row = (slotId - 10) % BiomeSynthesizerGUI.SLOTS_PER_COLUMN;
 
             // Handle different slot types
             let success = false;
@@ -380,7 +383,9 @@ export class BiomeSynthesizerGUI {
     private handleWorldTypeSlotClick(guiData: GUIData, column: number, itemId: string): boolean {
         // Check if this is a world type unlocker item
         if (!this.itemBlockMapper.isWorldTypeItem(itemId)) {
-            this.api.server.executeCommand(`/tellraw ${guiData.playerId} {"text":"${itemId} cannot unlock world types!","color":"red"}`);
+            if (this.api.server?.executeCommand) {
+                this.api.server.executeCommand(`/tellraw ${guiData.playerId} {"text":"${itemId} cannot unlock world types!","color":"red"}`);
+            }
             return false;
         }
 
@@ -388,8 +393,10 @@ export class BiomeSynthesizerGUI {
         const success = guiData.gridController.placeItem(column, 'world_type', itemId);
         if (success) {
             const worldType = this.itemBlockMapper.getUnlockedWorldType(itemId);
-            this.api.server.executeCommand(`/tellraw ${guiData.playerId} {"text":"Unlocked §e${worldType}§r world type!","color":"green"}`);
-            
+            if (this.api.server?.executeCommand) {
+                this.api.server.executeCommand(`/tellraw ${guiData.playerId} {"text":"Unlocked ┬ºe${worldType}┬ºr world type!","color":"green"}`);
+            }
+
             // Update slot display
             const slot = this.getSlotForPosition(column, 0);
             const updatedSlot: SlotData = {
@@ -400,7 +407,9 @@ export class BiomeSynthesizerGUI {
             };
             guiData.slots.set(slot, updatedSlot);
         } else {
-            this.api.server.executeCommand(`/tellraw ${guiData.playerId} {"text":"Failed to unlock world type with ${itemId}","color":"red"}`);
+            if (this.api.server?.executeCommand) {
+                this.api.server.executeCommand(`/tellraw ${guiData.playerId} {"text":"Failed to unlock world type with ${itemId}","color":"red"}`);
+            }
         }
 
         return success;
@@ -412,13 +421,17 @@ export class BiomeSynthesizerGUI {
     private handleBaseBiomeSlotClick(guiData: GUIData, column: number, itemId: string): boolean {
         // Check if this column is unlocked for base biome placement
         if (!guiData.gridController.isSlotUnlocked(column, 'base_biome')) {
-            this.api.server.executeCommand(`/tellraw ${guiData.playerId} {"text":"Column ${column + 1} is not unlocked for base biome placement!","color":"red"}`);
+            if (this.api.server?.executeCommand) {
+                this.api.server.executeCommand(`/tellraw ${guiData.playerId} {"text":"Column ${column + 1} is not unlocked for base biome placement!","color":"red"}`);
+            }
             return false;
         }
 
         // Check if this is a base biome item
         if (!this.itemBlockMapper.isBaseBiomeItem(itemId)) {
-            this.api.server.executeCommand(`/tellraw ${guiData.playerId} {"text":"${itemId} is not a valid base biome item!","color":"red"}`);
+            if (this.api.server?.executeCommand) {
+                this.api.server.executeCommand(`/tellraw ${guiData.playerId} {"text":"${itemId} is not a valid base biome item!","color":"red"}`);
+            }
             return false;
         }
 
@@ -426,13 +439,17 @@ export class BiomeSynthesizerGUI {
         const success = guiData.gridController.placeItem(column, 'base_biome', itemId);
         if (success) {
             const biomeType = this.itemBlockMapper.getBiomeType(itemId);
-            this.api.server.executeCommand(`/tellraw ${guiData.playerId} {"text":"Set base biome to §e${biomeType}§r!","color":"green"}`);
-            
+            if (this.api.server?.executeCommand) {
+                this.api.server.executeCommand(`/tellraw ${guiData.playerId} {"text":"Set base biome to ┬ºe${biomeType}┬ºr!","color":"green"}`);
+            }
+
             // Update slot display and unlock other slots in this column
-            this.updateSlotDisplay(playerId, this.getSlotForPosition(column, 1));
+            this.updateSlotDisplay(guiData.playerId, this.getSlotForPosition(column, 1));
             this.unlockColumnSlots(guiData, column);
         } else {
-            this.api.server.executeCommand(`/tellraw ${guiData.playerId} {"text":"Failed to set base biome with ${itemId}","color":"red"}`);
+            if (this.api.server?.executeCommand) {
+                this.api.server.executeCommand(`/tellraw ${guiData.playerId} {"text":"Failed to set base biome with ${itemId}","color":"red"}`);
+            }
         }
 
         return success;
@@ -444,14 +461,18 @@ export class BiomeSynthesizerGUI {
     private handleBlockSlotClick(guiData: GUIData, column: number, row: number, itemId: string): boolean {
         // Check if this column is unlocked for block placement
         if (!guiData.gridController.isSlotUnlocked(column, 'surface_block')) {
-            this.api.server.executeCommand(`/tellraw ${guiData.playerId} {"text":"Column ${column + 1} is not unlocked for block placement!","color":"red"}`);
+            if (this.api.server?.executeCommand) {
+                this.api.server.executeCommand(`/tellraw ${guiData.playerId} {"text":"Column ${column + 1} is not unlocked for block placement!","color":"red"}`);
+            }
             return false;
         }
 
         // Map item to block
         const blockId = this.itemBlockMapper.mapItemToBlock(itemId);
         if (!blockId) {
-            this.api.server.executeCommand(`/tellraw ${guiData.playerId} {"text":"${itemId} cannot be used in synthesizer!","color":"red"}`);
+            if (this.api.server?.executeCommand) {
+                this.api.server.executeCommand(`/tellraw ${guiData.playerId} {"text":"${itemId} cannot be used in synthesizer!","color":"red"}`);
+            }
             return false;
         }
 
@@ -459,10 +480,14 @@ export class BiomeSynthesizerGUI {
         const slotType = this.getRowSlotType(row);
         const success = guiData.gridController.placeItem(column, slotType, itemId);
         if (success) {
-            this.api.server.executeCommand(`/tellraw ${guiData.playerId} {"text":"Set ${slotType} to §e${this.getBlockDisplayName(itemId)}§r!","color":"green"}`);
-            this.updateSlotDisplay(playerId, this.getSlotForPosition(column, row));
+            if (this.api.server?.executeCommand) {
+                this.api.server.executeCommand(`/tellraw ${guiData.playerId} {"text":"Set ${slotType} to ┬ºe${this.getBlockDisplayName(itemId)}┬ºr!","color":"green"}`);
+            }
+            this.updateSlotDisplay(guiData.playerId, this.getSlotForPosition(column, row));
         } else {
-            this.api.server.executeCommand(`/tellraw ${guiData.playerId} {"text":"Failed to set ${slotType} with ${itemId}","color":"red"}`);
+            if (this.api.server?.executeCommand) {
+                this.api.server.executeCommand(`/tellraw ${guiData.playerId} {"text":"Failed to set ${slotType} with ${itemId}","color":"red"}`);
+            }
         }
 
         return success;
@@ -480,7 +505,7 @@ export class BiomeSynthesizerGUI {
      * Unlock all slots in a column after base biome is set
      */
     private unlockColumnSlots(guiData: GUIData, column: number): void {
-        for (let row = 1; row < this.SLOTS_PER_COLUMN; row++) {
+        for (let row = 1; row < BiomeSynthesizerGUI.SLOTS_PER_COLUMN; row++) {
             const slot = this.getSlotForPosition(column, row);
             const slotData = guiData.slots.get(slot);
             if (slotData) {
@@ -499,7 +524,9 @@ export class BiomeSynthesizerGUI {
 
         const slot = guiData.slots.get(slotId);
         if (slot) {
-            this.api.server.executeCommand(`/tellraw ${playerId} {"text":"Updated slot ${slotId}: ${slot.displayName}","color":"gray"}`);
+            if (this.api.server?.executeCommand) {
+                this.api.server.executeCommand(`/tellraw ${playerId} {"text":"Updated slot ${slotId}: ${slot.displayName}","color":"gray"}`);
+            }
         }
     }
 
@@ -510,10 +537,12 @@ export class BiomeSynthesizerGUI {
         try {
             const guiData = this.ensurePlayerGUIData(playerId);
             const grid = guiData.gridController.getGrid();
-            
+
             // Check if crafting is possible
             if (!guiData.gridController.canCraft()) {
-                this.api.server.executeCommand(`/tellraw ${playerId} {"text":"You need at least one biome defined to craft a dimension!","color":"red"}`);
+                if (this.api.server?.executeCommand) {
+                    this.api.server.executeCommand(`/tellraw ${playerId} {"text":"You need at least one biome defined to craft a dimension!","color":"red"}`);
+                }
                 return false;
             }
 
@@ -521,19 +550,25 @@ export class BiomeSynthesizerGUI {
 
             // Create Easter Egg bridge
             const seedKey = await this.easterEggBridge.createEasterEggBridge(grid, playerId);
-            
+
             if (seedKey) {
-                this.api.server.executeCommand(`/tellraw ${playerId} {"text":"§aDimension created! Use book \"${seedKey}\" to travel there.§r","color":"green"}`);
+                if (this.api.server?.executeCommand) {
+                    this.api.server.executeCommand(`/tellraw ${playerId} {"text":"┬ºaDimension created! Use book \"${seedKey}\" to travel there.┬ºr","color":"green"}`);
+                }
                 this.closeGUI(playerId);
                 return true;
             } else {
-                this.api.server.executeCommand(`/tellraw ${playerId} {"text":"Failed to create dimension. Please try again.","color":"red"}`);
+                if (this.api.server?.executeCommand) {
+                    this.api.server.executeCommand(`/tellraw ${playerId} {"text":"Failed to create dimension. Please try again.","color":"red"}`);
+                }
                 return false;
             }
 
         } catch (error) {
             this.logger.error(`Craft button failed for player ${playerId}:`, error);
-            this.api.server.executeCommand(`/tellraw ${playerId} {"text":"An error occurred while creating dimension.","color":"red"}`);
+            if (this.api.server?.executeCommand) {
+                this.api.server.executeCommand(`/tellraw ${playerId} {"text":"An error occurred while creating dimension.","color":"red"}`);
+            }
             return false;
         }
     }
@@ -545,7 +580,9 @@ export class BiomeSynthesizerGUI {
         const guiData = this.activeGUIs.get(playerId);
         if (guiData) {
             guiData.isOpen = false;
-            this.api.server.executeCommand(`/tellraw ${playerId} {"text":"Closing Biome Synthesizer GUI...","color":"gray"}`);
+            if (this.api.server?.executeCommand) {
+                this.api.server.executeCommand(`/tellraw ${playerId} {"text":"Closing Biome Synthesizer GUI...","color":"gray"}`);
+            }
         }
     }
 
@@ -558,7 +595,7 @@ export class BiomeSynthesizerGUI {
 
         for (const [playerId, guiData] of this.activeGUIs.entries()) {
             const ageMinutes = (now - guiData.lastUpdate) / (1000 * 60);
-            
+
             if (ageMinutes > maxAgeMinutes) {
                 this.activeGUIs.delete(playerId);
                 cleanedCount++;

@@ -26,6 +26,12 @@ class Builder {
             // Build PvP bridge plugin
             await this.buildPvPPlugin();
 
+            // Build Endless bridge plugin
+            await this.buildEndlessPlugin();
+
+            // Build Base bridge plugin
+            await this.buildBasePlugin();
+
             // Clean previous builds
             await this.clean();
 
@@ -204,6 +210,76 @@ class Builder {
         }
     }
 
+    async buildEndlessPlugin() {
+        console.log('Building Endless bridge plugin...');
+
+        const endlessPluginDir = path.join(__dirname, 'src', 'bridges', 'endless-bridge-plugin');
+
+        if (!fs.existsSync(endlessPluginDir)) {
+            console.log('  Endless bridge plugin directory not found, skipping...');
+            return;
+        }
+
+        try {
+            // Check if Gradle wrapper exists
+            const gradlewWrapper = process.platform === 'win32' ? 'gradlew.bat' : './gradlew';
+            const gradlewPath = path.join(endlessPluginDir, gradlewWrapper);
+
+            if (!fs.existsSync(gradlewPath)) {
+                console.log('  Gradle wrapper not found for Endless, skipping...');
+                return;
+            }
+
+            // Build the Endless bridge plugin
+            console.log('  Building Endless bridge plugin with Gradle...');
+            execSync(gradlewWrapper + ' shadowJar', {
+                cwd: endlessPluginDir,
+                stdio: 'inherit'
+            });
+
+            console.log('  Endless bridge plugin built successfully');
+
+        } catch (error) {
+            console.warn('  Endless bridge plugin build failed:', error.message);
+            console.log('  Run manually: cd src/bridges/endless-bridge-plugin && ./gradlew shadowJar');
+        }
+    }
+
+    async buildBasePlugin() {
+        console.log('Building Base bridge plugin...');
+
+        const basePluginDir = path.join(__dirname, 'src', 'bridges', 'base-bridge-plugin');
+
+        if (!fs.existsSync(basePluginDir)) {
+            console.log('  Base bridge plugin directory not found, skipping...');
+            return;
+        }
+
+        try {
+            // Check if Gradle wrapper exists
+            const gradlewWrapper = process.platform === 'win32' ? 'gradlew.bat' : './gradlew';
+            const gradlewPath = path.join(basePluginDir, gradlewWrapper);
+
+            if (!fs.existsSync(gradlewPath)) {
+                console.log('  Gradle wrapper not found for Base, skipping...');
+                return;
+            }
+
+            // Build the Base bridge plugin
+            console.log('  Building Base bridge plugin with Gradle...');
+            execSync(gradlewWrapper + ' shadowJar', {
+                cwd: basePluginDir,
+                stdio: 'inherit'
+            });
+
+            console.log('  Base bridge plugin built successfully');
+
+        } catch (error) {
+            console.warn('  Base bridge plugin build failed:', error.message);
+            console.log('  Run manually: cd src/bridges/base-bridge-plugin && ./gradlew shadowJar');
+        }
+    }
+
     async clean() {
         console.log('🧹 Cleaning previous builds...');
 
@@ -339,6 +415,47 @@ class Builder {
                         path.join(pluginsDir, jar)
                     );
                     console.log(`  ✓ Copied PvP bridge plugin ${jar} to plugins/`);
+                }
+            }
+        }
+        // Copy Endless bridge plugin to plugins folder
+        const endlessBuildDir = path.join(__dirname, 'src', 'bridges', 'endless-bridge-plugin', 'build', 'libs');
+        if (fs.existsSync(endlessBuildDir)) {
+            const pluginsDir = path.join(this.buildDir, 'plugins');
+            if (!fs.existsSync(pluginsDir)) {
+                fs.mkdirSync(pluginsDir, { recursive: true });
+            }
+
+            const endlessJars = fs.readdirSync(endlessBuildDir);
+            for (const jar of endlessJars) {
+                if (jar.startsWith('moud-endless-bridge') && jar.endsWith('.jar') &&
+                    !jar.includes('-sources.jar') && !jar.includes('-javadoc.jar')) {
+                    fs.copyFileSync(
+                        path.join(endlessBuildDir, jar),
+                        path.join(pluginsDir, jar)
+                    );
+                    console.log(`  Copied Endless bridge plugin ${jar} to plugins/`);
+                }
+            }
+        }
+
+        // Copy Base bridge plugin to plugins folder
+        const baseBuildDir = path.join(__dirname, 'src', 'bridges', 'base-bridge-plugin', 'build', 'libs');
+        if (fs.existsSync(baseBuildDir)) {
+            const pluginsDir = path.join(this.buildDir, 'plugins');
+            if (!fs.existsSync(pluginsDir)) {
+                fs.mkdirSync(pluginsDir, { recursive: true });
+            }
+
+            const baseJars = fs.readdirSync(baseBuildDir);
+            for (const jar of baseJars) {
+                if (jar.startsWith('moud-base-bridge') && jar.endsWith('.jar') &&
+                    !jar.includes('-sources.jar') && !jar.includes('-javadoc.jar')) {
+                    fs.copyFileSync(
+                        path.join(baseBuildDir, jar),
+                        path.join(pluginsDir, jar)
+                    );
+                    console.log(`  Copied Base bridge plugin ${jar} to plugins/`);
                 }
             }
         }

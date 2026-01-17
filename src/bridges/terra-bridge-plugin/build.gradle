@@ -19,6 +19,7 @@ group = 'com.moud.terra'
 version = '1.0.0-BETA'
 
 repositories {
+    mavenLocal()
     mavenCentral()
     maven { url 'https://repo.codemc.io/repository/maven-public/' }
     maven { url 'https://mvn.everbuild.org/public' }
@@ -54,15 +55,14 @@ shadowJar {
     archiveBaseName.set('moud-terra-bridge')
     archiveClassifier.set('')
     mergeServiceFiles()
-    // Shade Terra dependencies to avoid classpath conflicts
-    relocate 'com.dfsek.terra', 'moud.deps.terra'
-    relocate 'com.github.benmanes.caffeine', 'moud.deps.caffeine'
 }
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
+        languageVersion = JavaLanguageVersion.of(25)
     }
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
 }
 
 test {

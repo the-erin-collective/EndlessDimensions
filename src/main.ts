@@ -1,27 +1,32 @@
-/// <reference types="@epi-studio/moud-sdk" />
 
-const MOD_VERSION = '1.0.8';
-console.log(`[MAIN] Endless Dimensions Mod v${MOD_VERSION} starting...`);
+import './global-mod';
 
-// Import core logic
-import { DimensionGenerator } from './core/DimensionGenerator';
-import { HashEngine } from './core/HashEngine';
-import { BlockRegistry } from './core/BlockRegistry';
-import { PortalHandler } from './events/PortalHandler';
-import { EasterEggDimensionManager } from './core/EasterEggDimensionManager';
-import { CentralizedStateManager } from './core/CentralizedStateManager';
-import { CustomBlockRegistry } from './core/CustomBlockRegistry';
-import { BridgePluginManager } from './services/BridgePluginManager';
-import { DimensionService } from './services/DimensionService';
+// Type declarations for global EndlessDimensions namespace
+declare global {
+    namespace EndlessDimensions {
+        const VERSION: string;
+        const MOD_NAME: string;
+        const MOD_VERSION: string;
+        const BlockRegistry: typeof import('./core/BlockRegistry').BlockRegistry;
+        const CentralizedStateManager: typeof import('./core/CentralizedStateManager').CentralizedStateManager;
+        const CustomBlockRegistry: typeof import('./core/CustomBlockRegistry').CustomBlockRegistry;
+        const CustomBlockRegistryEnhanced: any;
+        const SoundSystem: any;
+        const ParticleSystem: any;
+        function onInit(): void;
+    }
+}
+
 import { LootService } from './services/LootService';
 
-// Import enhanced systems
-import { getCustomBlockRegistry } from './enhanced/CustomBlockRegistry';
-import { getBiomeGenerator } from './worldgen/biomeGenerator';
-import { getStructureGenerator } from './worldgen/StructureGenerator';
-import { getWorldFeatureIntegration } from './worldgen/WorldFeatureIntegration';
-import { getSoundSystem } from './enhanced/SoundSystem';
-import { getParticleSystem } from './enhanced/ParticleSystem';
+
+// Initialize the global mod namespace
+console.log('[MAIN] Loading EndlessDimensions global namespace...');
+
+// Initialize the mod systems
+if (globalThis.EndlessDimensions) {
+    globalThis.EndlessDimensions.onInit();
+}
 
 // Import Terra Bridge example
 import { demonstrateTerraBridge } from './examples/TerraBridgeExample';
@@ -30,7 +35,7 @@ import { demonstrateTerraBridge } from './examples/TerraBridgeExample';
 import { demonstratePolarBridge } from './examples/PolarBridgeExample';
 
 // Helper to log all available keys on the API object
-export const debugGlobalScope = () => {
+const debugGlobalScope = () => {
     try {
         const keys = Object.getOwnPropertyNames(globalThis);
         console.log("[DEBUG] Available Globals:", JSON.stringify(keys));
@@ -44,6 +49,10 @@ export const debugGlobalScope = () => {
         console.error("[DEBUG] Global scope probe failed:", e);
     }
 };
+
+// Make debug function globally available
+// @ts-ignore
+globalThis.debugGlobalScope = debugGlobalScope;
 
 debugGlobalScope();
 
@@ -156,67 +165,52 @@ function waitForMoudApi(): Promise<void> {
 }
 
 // Mod state variables
-let dimensionGenerator: DimensionGenerator;
-let hashEngine: HashEngine;
-let blockRegistry: BlockRegistry;
-let portalHandler: PortalHandler;
-let easterEggManager: EasterEggDimensionManager;
-let stateManager: CentralizedStateManager; // Original declaration
-let customBlockRegistry: CustomBlockRegistry;
+let blockRegistry: InstanceType<typeof EndlessDimensions.BlockRegistry>;
+let stateManager: InstanceType<typeof EndlessDimensions.CentralizedStateManager>; // Original declaration
+let customBlockRegistry: InstanceType<typeof EndlessDimensions.CustomBlockRegistry>;
 let enhancedCustomBlockRegistry: any;
-let biomeGenerator: any;
-let structureGenerator: any;
-let worldFeatureIntegration: any;
 let soundSystem: any;
 let particleSystem: any;
-let dimensionService: DimensionService;
 let lootService: LootService; // Added
+
+import { reportCapabilities } from './utils/CapabilityReporter';
 
 // Register event handlers
 api.on('server.load', async () => {
-    console.log(`[MAIN] server.load received (v${MOD_VERSION})`);
+    console.log(`[MAIN] server.load received (v${EndlessDimensions.VERSION})`);
 
     // Wait for the bridge to confirm sub-systems are available
     await waitForMoudApi();
+
+    // Report available capabilities
+    reportCapabilities();
 
     console.log('[MAIN] Starting full system initialization...');
     logDetailedApi((globalThis as any).api);
 
     try {
-        // Step 1: Initialize enhanced systems
-        const customBlockRegistry = getCustomBlockRegistry();
-        const soundSystem = getSoundSystem();
-        const particleSystem = getParticleSystem();
-        const structureGenerator = getStructureGenerator();
-        const worldFeatureIntegration = getWorldFeatureIntegration();
+        // Step 1: Use enhanced systems from global namespace
+        const customBlockRegistry = EndlessDimensions.CustomBlockRegistry;
+        const soundSystem = EndlessDimensions.SoundSystem;
+        const particleSystem = EndlessDimensions.ParticleSystem;
 
         // Initialize services
-        const dimensionService = new DimensionService(api);
         const lootService = new LootService();
 
         // Initialize services in parallel
         await Promise.all([
-            dimensionService.initialize(),
             lootService.initialize()
         ]);
 
         console.log('[MAIN] All services initialized successfully');
 
         // Step 3: Initialize core systems
-        hashEngine = new HashEngine();
-        blockRegistry = new BlockRegistry(api);
+        blockRegistry = new EndlessDimensions.BlockRegistry(api);
 
         console.log('[MAIN] Loading block registry data...');
         await blockRegistry.initialize();
 
-        dimensionGenerator = new DimensionGenerator(api, hashEngine, blockRegistry);
-        easterEggManager = new EasterEggDimensionManager(api);
-
-        console.log('[MAIN] Loading easter egg dimensions...');
-        await easterEggManager.initialize();
-
-        stateManager = new CentralizedStateManager(api);
-        portalHandler = new PortalHandler(api, dimensionGenerator, hashEngine, easterEggManager);
+        stateManager = new EndlessDimensions.CentralizedStateManager(api);
 
         // Step 4: Initialize Services (already done above)
         // dimensionService and lootService are already initialized
@@ -276,16 +270,13 @@ api.on('server.load', async () => {
         console.log('[MAIN] Initializing state synchronization...');
         await stateManager.initialize();
 
-        // Step 6: Register event handlers
-        portalHandler.registerEvents();
-
-        // Step 7: Demonstrate Terra Bridge Plugin usage
+        // Step 6: Demonstrate Terra Bridge Plugin usage
         await demonstrateTerraBridge();
 
-        // Step 8: Demonstrate Polar Bridge Plugin usage
+        // Step 7: Demonstrate Polar Bridge Plugin usage
         await demonstratePolarBridge();
 
-        console.log(`[MAIN] Endless Dimensions Mod v${MOD_VERSION} initialization complete!`);
+        console.log(`[MAIN] Endless Dimensions Mod v${EndlessDimensions.VERSION} initialization complete!`);
     } catch (error) {
         console.error('[MAIN] FATAL ERROR during initialization:', error);
     }
@@ -293,15 +284,11 @@ api.on('server.load', async () => {
 
 api.on('server.shutdown', () => {
     console.log('[MAIN] Mod shutting down...');
-    if (portalHandler) portalHandler.unregisterEvents();
     if (stateManager) stateManager.shutdown();
     if (enhancedCustomBlockRegistry) enhancedCustomBlockRegistry.clearCustomBlocks();
-    if (biomeGenerator) biomeGenerator.clearBiomes();
-    if (structureGenerator) structureGenerator.clearStructures();
-    if (worldFeatureIntegration) worldFeatureIntegration.clearWorldFeatures();
     if (soundSystem) soundSystem.clearSounds();
     if (particleSystem) particleSystem.clearParticles();
     console.log('[MAIN] Shutdown complete.');
 });
 
-console.log(`[MAIN] Mod loading complete (v${MOD_VERSION})`);
+console.log(`[MAIN] Mod loading complete (v${EndlessDimensions.VERSION})`);

@@ -1,0 +1,12 @@
+{
+  "name": "BaseBridge",
+  "version": "1.0.0-BETA",
+  "entrypoint": "com.moud.base.BaseBridgeExtension",
+  "description": "Base world bridge for Terra-driven overworld/nether/end",
+  "authors": [
+    "Moud Team"
+  ],
+  "dependencies": [],
+  "minestom": ">=1.20.1",
+  "environment": "server"
+}

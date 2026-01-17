@@ -1,0 +1,91 @@
+buildscript {
+    repositories {
+        mavenLocal()
+        mavenCentral()
+    }
+    dependencies {
+        // This forces Gradle build environment to use a compatible ASM version
+        classpath 'org.ow2.asm:asm:9.7'
+        classpath 'org.ow2.asm:asm-commons:9.7'
+    }
+}
+
+plugins {
+    id 'java'
+    id 'java-library'
+    id 'com.gradleup.shadow' version '9.3.1'
+}
+
+group = 'com.moud.base'
+version = '1.0.0-BETA'
+description = 'Base world bridge plugin for vanilla-style Terra overworld/nether/end'
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+    maven { url 'https://repo.codemc.io/repository/maven-public/' }
+    maven { url 'https://mvn.everbuild.org/public' }
+    maven { url 'https://repo.hollowcube.dev/releases' }
+    maven { url 'https://jitpack.io' }
+}
+
+dependencies {
+    // Minestom CE Extensions - for proper extension loading
+    implementation('dev.hollowcube:minestom-ce-extensions:1.2.0') {
+        exclude group: 'com.github.Minestom', module: 'DependencyGetter'
+    }
+
+    // Kotlin standard library for DependencyGetter
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib:1.9.10'
+
+    // Terra world generation
+    implementation('com.dfsek.terra:minestom:6.6.0-BETA+810d10ac0') {
+        exclude group: 'net.minestom', module: 'minestom'
+    }
+
+    // Polar persistence
+    implementation 'dev.hollowcube:polar:1.15.0'
+
+    // Force newer ASM version for Java compatibility
+    implementation 'org.ow2.asm:asm:9.7'
+    implementation 'org.ow2.asm:asm-commons:9.7'
+
+    // Minestom (provided by server runtime)
+    compileOnly 'net.minestom:minestom:2026.01.08-1.21.11'
+
+    // Fastutil (required by Polar's class signatures)
+    compileOnly 'it.unimi.dsi:fastutil:8.5.18'
+
+    // Logging
+    implementation 'org.slf4j:slf4j-api:2.0.7'
+
+    // GraalVM Polyglot (provided by Moud if available)
+    compileOnly 'org.graalvm.sdk:graal-sdk:24.0.0'
+
+    // Testing
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.0'
+    testImplementation 'org.mockito:mockito-core:5.5.0'
+    testImplementation 'org.mockito:mockito-junit-jupiter:5.5.0'
+}
+
+shadowJar {
+    archiveBaseName.set('moud-base-bridge')
+    archiveClassifier.set('')
+    mergeServiceFiles()
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
+}
+
+test {
+    useJUnitPlatform()
+    testLogging {
+        events "passed", "skipped", "failed"
+        exceptionFormat "full"
+    }
+}

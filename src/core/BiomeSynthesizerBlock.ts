@@ -1,4 +1,4 @@
-/// <reference types="@epi-studio/moud-sdk" />
+﻿/// <reference types="@epi-studio/moud-sdk" />
 import { Logger } from '../utils/Logger';
 import { CustomBlockRegistry } from './CustomBlockRegistry';
 
@@ -61,36 +61,24 @@ export class BiomeSynthesizerBlock {
                     resistance: this.blockConfig.resistance,
                     lightLevel: this.blockConfig.lightLevel,
                     hasCollision: this.blockConfig.hasCollision,
+                    toolRequired: 'pickaxe',
+                    texture: this.blockConfig.itemId,
+                    properties: {},
                     requiresCorrectToolForDrops: false,
                     stackSize: 64,
                     itemModel: this.blockConfig.itemId
                 },
-                {
-                    // Block properties for custom behavior
-                    onRightClick: (player, position, blockState) => {
-                        this.handleBlockRightClick(player, position, blockState);
-                        return true;
-                    },
-                    onBreak: (player, position, blockState) => {
-                        this.handleBlockBreak(player, position, blockState);
-                        return true;
-                    },
-                    onPlace: (player, position, blockState) => {
-                        this.handleBlockPlace(player, position, blockState);
-                        return true;
-                    }
-                }
             );
 
             if (success) {
                 this.logger.info(`Successfully registered Biome Synthesizer block: ${this.blockConfig.blockId}`);
-                
+
                 // Register the item for the block
                 await this.registerBlockItem();
-                
+
                 // Register the crafting recipe
                 await this.registerCraftingRecipe();
-                
+
                 return true;
             } else {
                 this.logger.error(`Failed to register Biome Synthesizer block: ${this.blockConfig.blockId}`);
@@ -174,7 +162,7 @@ export class BiomeSynthesizerBlock {
     private handleBlockRightClick(player: string, position: any, blockState: any): void {
         try {
             this.logger.info(`Player ${player} right-clicked Biome Synthesizer at position ${JSON.stringify(position)}`);
-            
+
             // Send custom event to open the GUI
             this.api.events.emit('synthesizer_block_right_click', {
                 playerId: player,
@@ -193,7 +181,7 @@ export class BiomeSynthesizerBlock {
     private handleBlockBreak(player: string, position: any, blockState: any): void {
         try {
             this.logger.info(`Player ${player} broke Biome Synthesizer at position ${JSON.stringify(position)}`);
-            
+
             // Send event for block break
             this.api.events.emit('synthesizer_block_break', {
                 playerId: player,
@@ -212,7 +200,7 @@ export class BiomeSynthesizerBlock {
     private handleBlockPlace(player: string, position: any, blockState: any): void {
         try {
             this.logger.info(`Player ${player} placed Biome Synthesizer at position ${JSON.stringify(position)}`);
-            
+
             // Send event for block place
             this.api.events.emit('synthesizer_block_place', {
                 playerId: player,

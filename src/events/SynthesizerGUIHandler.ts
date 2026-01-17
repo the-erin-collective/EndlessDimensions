@@ -1,8 +1,6 @@
-/// <reference types="@epi-studio/moud-sdk" />
+﻿/// <reference types="@epi-studio/moud-sdk" />
 import { Logger } from '../utils/Logger';
 import { VirtualGridController, SynthesizerGrid, BiomeColumn } from '../core/VirtualGridController';
-import { BiomeJsonCompiler } from '../core/BiomeJsonCompiler';
-import { DynamicRegistryInjector } from '../core/DynamicRegistryInjector';
 import { EasterEggBridge } from '../core/EasterEggBridge';
 import { ItemBlockMapper } from '../core/ItemBlockMapper';
 import { PacketInterceptor } from '../core/PacketInterceptor';
@@ -25,16 +23,12 @@ export class SynthesizerGUIHandler {
     private api: MoudAPI;
     private logger: Logger;
     private playerGUIData: Map<string, PlayerGUIData>;
-    private biomeCompiler: BiomeJsonCompiler;
-    private registryInjector: DynamicRegistryInjector;
     private easterEggBridge: EasterEggBridge;
     private itemBlockMapper: ItemBlockMapper;
     private packetInterceptor: PacketInterceptor;
 
     constructor(
         api: MoudAPI,
-        biomeCompiler: BiomeJsonCompiler,
-        registryInjector: DynamicRegistryInjector,
         easterEggBridge: EasterEggBridge,
         itemBlockMapper: ItemBlockMapper,
         packetInterceptor: PacketInterceptor
@@ -42,12 +36,10 @@ export class SynthesizerGUIHandler {
         this.api = api;
         this.logger = new Logger('SynthesizerGUIHandler');
         this.playerGUIData = new Map();
-        this.biomeCompiler = biomeCompiler;
-        this.registryInjector = registryInjector;
         this.easterEggBridge = easterEggBridge;
         this.itemBlockMapper = itemBlockMapper;
         this.packetInterceptor = packetInterceptor;
-        
+
         this.initializePacketHandlers();
     }
 
@@ -56,14 +48,22 @@ export class SynthesizerGUIHandler {
      */
     private initializePacketHandlers(): void {
         // Handle player interactions with synthesizer blocks
-        this.packetInterceptor.onOutgoingPacket((packet, playerId) => {
-            this.handlePlayerPacket(packet, playerId);
-        });
+        if (this.api.packets && this.api.packets.onOutgoing) {
+            this.api.packets.onOutgoing((packet: any) => {
+                // We need to extract playerId from packet or context if available
+                // For now assuming packet has it or we can't reliably track it without context
+                const playerId = packet.playerId || 'unknown';
+                this.handlePlayerPacket(packet, playerId);
+            });
+        }
 
         // Handle inventory updates (for item slot changes)
-        this.packetInterceptor.onIncomingPacket((packet, playerId) => {
-            this.handleServerPacket(packet, playerId);
-        });
+        if (this.api.packets && this.api.packets.onIncoming) {
+            this.api.packets.onIncoming((packet: any) => {
+                const playerId = packet.playerId || 'unknown';
+                this.handleServerPacket(packet, playerId);
+            });
+        }
 
         this.logger.info('Initialized packet handlers for GUI interaction detection');
     }
@@ -125,6 +125,14 @@ export class SynthesizerGUIHandler {
     }
 
     /**
+     * Handle slot change packet (player switching hotbar slot)
+     */
+    private handleSlotChangePacket(packet: any, playerId: string): void {
+        // Placeholder for hotbar slot change logic
+        // We might track this to know what item the player is holding
+    }
+
+    /**
      * Handle container click packet (GUI interactions)
      */
     private handleContainerClickPacket(packet: any, playerId: string): void {
@@ -173,6 +181,14 @@ export class SynthesizerGUIHandler {
     }
 
     /**
+     * Update GUI state from container items
+     */
+    private updateGUIFromContainer(playerId: string, items: any[]): void {
+        // Placeholder for syncing grid controller with container items
+        // In a full implementation, we would map slot items back to grid state
+    }
+
+    /**
      * Handle set slot packet
      */
     private handleSetSlotPacket(packet: any, playerId: string): void {
@@ -184,12 +200,19 @@ export class SynthesizerGUIHandler {
     }
 
     /**
+     * Update a specific GUI slot
+     */
+    private updateGUISlot(playerId: string, slotId: number, itemStack: any): void {
+        // Placeholder for updating single slot
+    }
+
+    /**
      * Open the synthesizer GUI for a player
      */
     private openSynthesizerGUI(playerId: string, position: any): void {
         try {
             const playerData = this.ensurePlayerGUIData(playerId);
-            
+
             // Check power level of the synthesizer block
             const powerLevel = this.getBlockPowerLevel(position);
             playerData.gridController.updatePowerLevel(powerLevel);
@@ -248,7 +271,8 @@ export class SynthesizerGUIHandler {
         const cursorItem = clickData.carriedItem;
         if (!cursorItem) {
             // Empty click - clear the slot
-            this.updateGridColumn(playerId, columnIndex, { groundBlock: 'minecraft:stone' });
+            // Fix: property is surfaceBlock not groundBlock
+            this.updateGridColumn(playerId, columnIndex, { surfaceBlock: 'minecraft:stone' });
             return;
         }
 
@@ -261,13 +285,13 @@ export class SynthesizerGUIHandler {
 
         // Determine which property to update based on click context
         const updateData: Partial<BiomeColumn> = {};
-        
+
         if (this.itemBlockMapper.isFluidItem(cursorItem.id)) {
-            updateData.fluidBlock = blockId;
+            updateData.liquidBlock = blockId;
         } else if (this.itemBlockMapper.isOreItem(cursorItem.id)) {
-            updateData.oreLayout = blockId;
+            updateData.ores = blockId;
         } else {
-            updateData.groundBlock = blockId;
+            updateData.surfaceBlock = blockId;
         }
 
         this.updateGridColumn(playerId, columnIndex, updateData);
@@ -284,6 +308,7 @@ export class SynthesizerGUIHandler {
         if (!grid.isColumnUnlocked(columnIndex)) return;
 
         const currentColumn = grid.getGrid().columns[columnIndex];
+        // Ensure worldType is available (we enable this via our type update)
         const newWorldType = currentColumn.worldType === 'flat' ? 'noise' : 'flat';
 
         this.updateGridColumn(playerId, columnIndex, { worldType: newWorldType });
@@ -292,7 +317,7 @@ export class SynthesizerGUIHandler {
     /**
      * Handle craft button click
      */
-    private handleCraftButtonClick(playerId: string): void {
+    private async handleCraftButtonClick(playerId: string): Promise<void> {
         try {
             const playerData = this.playerGUIData.get(playerId);
             if (!playerData) return;
@@ -302,7 +327,7 @@ export class SynthesizerGUIHandler {
 
             // Create Easter Egg bridge
             const seedKey = await this.easterEggBridge.createEasterEggBridge(grid, playerId);
-            
+
             if (seedKey) {
                 this.sendSuccessMessage(playerId, `Dimension created! Use the book "${seedKey}" to travel there.`);
                 this.closeGUI(playerId);
@@ -356,8 +381,11 @@ export class SynthesizerGUIHandler {
     private isSynthesizerBlock(position: any): boolean {
         // This would check if the block at the position is a synthesizer block
         // Implementation depends on how you identify synthesizer blocks
-        const blockId = this.api.world.getBlock(position.x, position.y, position.z);
-        return blockId === 'endlessdimensions:biome_synthesizer';
+        if (this.api.world?.getBlock) {
+            const blockId = this.api.world.getBlock(position.x, position.y, position.z);
+            return blockId === 'endlessdimensions:biome_synthesizer';
+        }
+        return false;
     }
 
     /**
@@ -382,14 +410,18 @@ export class SynthesizerGUIHandler {
      * Send error message to player
      */
     private sendErrorMessage(playerId: string, message: string): void {
-        this.api.server.executeCommand(`/tellraw ${playerId} {"text":"${message}","color":"red"}`);
+        if (this.api.server?.executeCommand) {
+            this.api.server.executeCommand(`/tellraw ${playerId} {"text":"${message}","color":"red"}`);
+        }
     }
 
     /**
      * Send success message to player
      */
     private sendSuccessMessage(playerId: string, message: string): void {
-        this.api.server.executeCommand(`/tellraw ${playerId} {"text":"${message}","color":"green"}`);
+        if (this.api.server?.executeCommand) {
+            this.api.server.executeCommand(`/tellraw ${playerId} {"text":"${message}","color":"green"}`);
+        }
     }
 
     /**
@@ -400,7 +432,9 @@ export class SynthesizerGUIHandler {
         if (playerData) {
             playerData.isOpen = false;
         }
-        this.api.server.executeCommand(`/tellraw ${playerId} {"text":"Closing Biome Synthesizer GUI...","color":"gray"}`);
+        if (this.api.server?.executeCommand) {
+            this.api.server.executeCommand(`/tellraw ${playerId} {"text":"Closing Biome Synthesizer GUI...","color":"gray"}`);
+        }
     }
 
     /**
@@ -451,7 +485,7 @@ export class SynthesizerGUIHandler {
 
         for (const [playerId, playerData] of this.playerGUIData.entries()) {
             const ageMinutes = (now - playerData.lastInteraction) / (1000 * 60);
-            
+
             if (ageMinutes > maxAgeMinutes) {
                 this.playerGUIData.delete(playerId);
                 cleanedCount++;

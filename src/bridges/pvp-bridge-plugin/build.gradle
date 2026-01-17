@@ -8,27 +8,21 @@ group = 'com.moud.pvp'
 version = '1.0.0-BETA'
 
 repositories {
+    mavenLocal()
     mavenCentral()
     maven { url 'https://repo.codemc.io/repository/maven-public/' }
     maven { url 'https://mvn.everbuild.org/public' }
     maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
     maven { url 'https://jitpack.io' }
+    maven { url 'https://repo.hollowcube.dev/releases' }
 }
 
 dependencies {
     // Minestom CE Extensions - for proper extension loading
-    implementation('dev.hollowcube:minestom-ce-extensions:1.2.0') {
-        exclude group: 'com.github.Minestom', module: 'DependencyGetter'
-    }
+    implementation 'dev.hollowcube:minestom-ce-extensions:1.2.0'
     
-    // Minestom server for EventNode
-    implementation 'net.onelitefeather.microtus:Minestom:1.3.1'
-    
-    // Kotlin standard library for DependencyGetter
-    implementation 'org.jetbrains.kotlin:kotlin-stdlib:1.9.10'
-    
-    // JetBrains annotations for @Nullable
-    implementation 'org.jetbrains:annotations:24.0.1'
+    // JetBrains annotations for @NotNull - updated version for Java 25 compatibility
+    implementation 'org.jetbrains:annotations:26.0.2'
     
     // Force newer ASM version for Java 21 compatibility
     implementation 'org.ow2.asm:asm:9.7'
@@ -37,11 +31,15 @@ dependencies {
     // GraalVM Polyglot (provided by Moud if available)
     compileOnly 'org.graalvm.sdk:graal-sdk:24.0.0'
     
-    // Minestom (provided by Moud runtime/Terra)
-    compileOnly 'com.dfsek.terra:minestom:6.6.0-BETA+810d10ac0'
+    // Minestom (provided by Moud runtime/Terra) - ensure EventNode is visible
+    // Force Terra to use the same Minestom version as everything else
+    compileOnly 'net.minestom:minestom:2026.01.08-1.21.11'
+    compileOnly('com.dfsek.terra:minestom:6.6.0-BETA+810d10ac0') {
+        exclude group: 'net.minestom', module: 'minestom'
+    }
     
-    // MinestomPvP combat library - use pre-compiled JAR
-    implementation files('../../libs/MinestomPvP-2025.12.29.jar')
+    // MinestomPvP combat library - use includeBuild source integration
+    implementation project(':MinestomPvP')
     
     // Logging
     implementation 'org.slf4j:slf4j-api:2.0.7'
@@ -67,6 +65,13 @@ shadowJar {
     archiveBaseName.set('moud-pvp-bridge')
     archiveClassifier.set('')
     mergeServiceFiles()
+    
+    // Include MinestomPvP and necessary dependencies, but NOT Minestom itself
+    dependencies {
+        include(dependency('dev.hollowcube:minestom-ce-extensions:1.2.0'))
+        include(dependency('org.jetbrains:annotations:26.0.2'))
+        include(project(':MinestomPvP'))
+    }
 }
 
 jar {

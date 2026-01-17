@@ -1,4 +1,3 @@
-/// <reference types="@epi-studio/moud-sdk" />
 import { Logger } from '../utils/Logger';
 
 // Type definitions for performance optimization
@@ -223,8 +222,8 @@ export class PerformanceOptimization {
   private collectPerformanceMetrics(): void {
     try {
       // Get current memory usage
-      if (performance.memory) {
-        const memoryInfo = performance.memory;
+      if ((performance as any).memory) {
+        const memoryInfo = (performance as any).memory;
         this.currentMetrics.memoryUsage = memoryInfo.usedJSHeapSize / 1024 / 1024; // MB
       }
 
@@ -233,7 +232,7 @@ export class PerformanceOptimization {
 
       // Add to history
       this.performanceHistory.push({ ...this.currentMetrics });
-      
+
       // Trim history if too large
       if (this.performanceHistory.length > this.maxHistorySize) {
         this.performanceHistory.shift();
@@ -251,7 +250,7 @@ export class PerformanceOptimization {
     try {
       // This would integrate with other systems to collect their timing data
       // For now, we'll simulate some metrics
-      
+
       // State sync timing
       const stateSyncStart = performance.now();
       // Simulate state sync operation
@@ -306,7 +305,7 @@ export class PerformanceOptimization {
 
       const recent = this.performanceHistory.slice(-10); // Last 10 measurements
       const average = this.calculateAverageMetrics(recent);
-      
+
       // Check for performance issues
       this.checkPerformanceThresholds(average);
 
@@ -338,7 +337,7 @@ export class PerformanceOptimization {
       });
 
       const count = metrics.length;
-      
+
       return {
         stateSyncTime: sum.stateSyncTime / count,
         packetProcessingTime: sum.packetProcessingTime / count,
@@ -548,7 +547,7 @@ export class PerformanceOptimization {
     try {
       // This would integrate with the state manager to optimize subscriptions
       const callbacks = this.optimizationCallbacks.get('stateSync') || [];
-      
+
       for (const callback of callbacks) {
         callback(this.currentSettings);
       }
@@ -565,7 +564,7 @@ export class PerformanceOptimization {
     try {
       // This would integrate with the packet system to optimize processing
       const callbacks = this.optimizationCallbacks.get('packetProcessing') || [];
-      
+
       for (const callback of callbacks) {
         callback(this.currentSettings);
       }
@@ -582,7 +581,7 @@ export class PerformanceOptimization {
     try {
       // This would integrate with the spatial scanner to optimize scanning
       const callbacks = this.optimizationCallbacks.get('spatialScan') || [];
-      
+
       for (const callback of callbacks) {
         callback(this.currentSettings);
       }
@@ -599,7 +598,7 @@ export class PerformanceOptimization {
     try {
       // This would integrate with the audio system to optimize processing
       const callbacks = this.optimizationCallbacks.get('audio') || [];
-      
+
       for (const callback of callbacks) {
         callback(this.currentSettings);
       }
@@ -616,7 +615,7 @@ export class PerformanceOptimization {
     try {
       // This would integrate with the particle system to optimize generation
       const callbacks = this.optimizationCallbacks.get('particles') || [];
-      
+
       for (const callback of callbacks) {
         callback(this.currentSettings);
       }
@@ -633,7 +632,7 @@ export class PerformanceOptimization {
     try {
       // This would integrate with the feedback system to optimize delivery
       const callbacks = this.optimizationCallbacks.get('messages') || [];
-      
+
       for (const callback of callbacks) {
         callback(this.currentSettings);
       }
@@ -673,7 +672,7 @@ export class PerformanceOptimization {
       if (!this.optimizationCallbacks.has(system)) {
         this.optimizationCallbacks.set(system, []);
       }
-      
+
       this.optimizationCallbacks.get(system)!.push(callback);
       this.logger.debug(`Registered optimization callback for ${system}`);
 
@@ -791,7 +790,7 @@ export class PerformanceOptimization {
   public async savePerformanceReport(): Promise<{ success: boolean; error?: string }> {
     try {
       const report = this.generatePerformanceReport();
-      
+
       if (api.internal && api.internal.fs) {
         await api.internal.fs.writeFile('performance_report.md', report);
         return { success: true };

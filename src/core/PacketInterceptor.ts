@@ -1,4 +1,4 @@
-/// <reference types="@epi-studio/moud-sdk" />
+﻿/// <reference types="@epi-studio/moud-sdk" />
 import { Logger } from '../utils/Logger';
 import { 
     PACKET_IDS, 

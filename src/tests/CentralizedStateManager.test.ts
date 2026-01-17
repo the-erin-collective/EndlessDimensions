@@ -1,4 +1,3 @@
-/// <reference types="@epi-studio/moud-sdk" />
 import { CentralizedStateManager } from '../core/CentralizedStateManager';
 
 // Mock API for testing

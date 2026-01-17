@@ -1,0 +1,18 @@
+{
+  "id": "base-bridge",
+  "name": "Base Bridge Plugin",
+  "version": "1.0.0-BETA",
+  "description": "Base overworld/nether/end world creation using Terra packs",
+  "author": "Moud Team",
+  "mainClass": "com.moud.base.BaseBridgePlugin",
+  "depends": [
+    "plugin-api"
+  ],
+  "provides": [
+    "base-worlds"
+  ],
+  "permissions": [
+    "base.world.create",
+    "base.world.manage"
+  ]
+}

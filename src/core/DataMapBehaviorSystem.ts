@@ -1,6 +1,5 @@
-/// <reference types="@epi-studio/moud-sdk" />
 import { Logger } from '../utils/Logger';
-import { getDataPackSyncManager } from '../hooks/useDataPackSync';
+// import { getDataPackSyncManager } from '../hooks/useDataPackSync'; // Removed
 
 // Type definitions for behavior system
 interface BehaviorDefinition {
@@ -44,7 +43,7 @@ interface BehaviorRegistration {
  */
 export class DataMapBehaviorSystem {
   private logger: Logger;
-  private dataPackSyncManager: any;
+  // private dataPackSyncManager: any; // Removed
   private behaviorMaps: Map<string, BehaviorDefinition> = new Map();
   private registeredBehaviors: Map<string, BehaviorRegistration> = new Map();
   private behaviorSubscribers: Map<string, Set<Function>> = new Map();
@@ -55,7 +54,7 @@ export class DataMapBehaviorSystem {
 
   constructor() {
     this.logger = new Logger('DataMapBehaviorSystem');
-    this.dataPackSyncManager = getDataPackSyncManager();
+    // this.dataPackSyncManager = getDataPackSyncManager(); // Removed
   }
 
   /**
@@ -103,26 +102,28 @@ export class DataMapBehaviorSystem {
     try {
       // Try to load from existing data map files
       const dataMapFiles = await this.scanDataMapFiles();
-      
+
       for (const filePath of dataMapFiles) {
         try {
-          const content = await api.internal.fs.readFile(filePath);
-          const dataMap = JSON.parse(content);
-          
-          // Extract behaviors from data map
-          for (const [key, value] of Object.entries(dataMap.values || {})) {
-            if (key.startsWith(`${this.dataMapNamespace}:`)) {
-              const blockId = key.substring(this.dataMapNamespace.length + 1);
-              this.behaviorMaps.set(blockId, value as BehaviorDefinition);
-              
-              // Track registration
-              this.registeredBehaviors.set(blockId, {
-                blockId,
-                behavior: value as BehaviorDefinition,
-                registeredAt: Date.now(),
-                isActive: true,
-                dataMapPath: filePath
-              });
+          if (api.internal?.fs?.readFile) {
+            const content = await api.internal.fs.readFile(filePath);
+            const dataMap = JSON.parse(content);
+
+            // Extract behaviors from data map
+            for (const [key, value] of Object.entries(dataMap.values || {})) {
+              if (key.startsWith(`${this.dataMapNamespace}:`)) {
+                const blockId = key.substring(this.dataMapNamespace.length + 1);
+                this.behaviorMaps.set(blockId, value as BehaviorDefinition);
+
+                // Track registration
+                this.registeredBehaviors.set(blockId, {
+                  blockId,
+                  behavior: value as BehaviorDefinition,
+                  registeredAt: Date.now(),
+                  isActive: true,
+                  dataMapPath: filePath
+                });
+              }
             }
           }
         } catch (error) {
@@ -144,14 +145,16 @@ export class DataMapBehaviorSystem {
     try {
       const files: string[] = [];
       const basePath = "world/datapacks/endless/data/endless/data_maps";
-      
+
       // Try to list data map directory
       try {
-        const dirList = await api.internal.fs.listFiles(basePath);
-        
-        for (const fileName of dirList) {
-          if (fileName.endsWith('_behavior.json')) {
-            files.push(`${basePath}/${fileName}`);
+        if (api.internal?.fs?.listFiles) {
+          const dirList = await api.internal.fs.listFiles(basePath);
+
+          for (const fileName of dirList) {
+            if (fileName.endsWith('_behavior.json')) {
+              files.push(`${basePath}/${fileName}`);
+            }
           }
         }
       } catch (error) {
@@ -171,12 +174,12 @@ export class DataMapBehaviorSystem {
    */
   private subscribeToDataMapChanges(): void {
     try {
-      if (api.state) {
+      if (api.state?.subscribe) {
         // Subscribe to state changes that affect data maps
         api.state.subscribe("dataMapValues", (newValues) => {
           this.handleDataMapChange(newValues);
         });
-        
+
         this.logger.debug('Subscribed to data map changes');
       }
     } catch (error) {
@@ -191,18 +194,20 @@ export class DataMapBehaviorSystem {
     try {
       // Invalidate cache
       this.cacheValid = false;
-      
+
       // Update local behavior maps
-      for (const [key, value] of Object.entries(newValues || {})) {
-        if (key.startsWith(`${this.dataMapNamespace}:`)) {
-          const blockId = key.substring(this.dataMapNamespace.length + 1);
-          this.behaviorMaps.set(blockId, value as BehaviorDefinition);
-          
-          // Notify subscribers
-          this.notifyBehaviorSubscribers(blockId, value);
+      if (typeof newValues === 'object' && newValues !== null) {
+        for (const [key, value] of Object.entries(newValues || {})) {
+          if (key.startsWith(`${this.dataMapNamespace}:`)) {
+            const blockId = key.substring(this.dataMapNamespace.length + 1);
+            this.behaviorMaps.set(blockId, value as BehaviorDefinition);
+
+            // Notify subscribers
+            this.notifyBehaviorSubscribers(blockId, value as BehaviorDefinition);
+          }
         }
       }
-      
+
       this.logger.debug('Data map changes processed');
 
     } catch (error) {
@@ -234,7 +239,7 @@ export class DataMapBehaviorSystem {
    * Register behavior for a block
    */
   public async registerBehavior(
-    blockId: string, 
+    blockId: string,
     behavior: BehaviorDefinition
   ): Promise<{ success: boolean; error?: string }> {
     try {
@@ -255,13 +260,15 @@ export class DataMapBehaviorSystem {
 
       // Write data map to filesystem
       const filePath = `world/datapacks/endless/data/endless/data_maps/${blockId}_behavior.json`;
-      const result = await this.dataPackSyncManager.fileSystemManager.writeFile(
-        filePath, 
-        JSON.stringify(dataMap, null, 2)
-      );
 
-      if (!result.success) {
-        throw new Error(`Failed to write data map: ${result.error}`);
+      // Use internal api directly if available, bypassing removed dataPackManager
+      if (api.internal?.fs?.writeFile) {
+        await api.internal.fs.writeFile(
+          filePath,
+          JSON.stringify(dataMap, null, 2)
+        );
+      } else {
+        this.logger.warn("Filesystem API not available, behavior registered in-memory only");
       }
 
       // Store in local registry
@@ -373,10 +380,10 @@ export class DataMapBehaviorSystem {
           sound_event: behavior.sound_event || "minecraft:block.amethyst_cluster.step",
           light_level: behavior.light_level || 0,
           custom_drops: behavior.custom_drops || [],
-          
+
           // Custom properties
           ...behavior.custom_properties,
-          
+
           // Event handlers
           on_break: behavior.on_break,
           on_place: behavior.on_place,
@@ -481,7 +488,7 @@ export class DataMapBehaviorSystem {
         this.behaviorSubscribers.set(blockId, new Set());
       }
       this.behaviorSubscribers.get(blockId)!.add(callback);
-      
+
       this.logger.debug(`Subscribed to behavior changes for ${blockId}`);
     } catch (error) {
       this.logger.error(`Failed to subscribe to behavior for ${blockId}:`, error);
@@ -500,7 +507,7 @@ export class DataMapBehaviorSystem {
           this.behaviorSubscribers.delete(blockId);
         }
       }
-      
+
       this.logger.debug(`Unsubscribed from behavior changes for ${blockId}`);
     } catch (error) {
       this.logger.error(`Failed to unsubscribe from behavior for ${blockId}:`, error);
@@ -515,17 +522,19 @@ export class DataMapBehaviorSystem {
       // Remove from local registry
       this.behaviorMaps.delete(blockId);
       this.behaviorCache.delete(blockId);
-      
+
       // Remove from registered behaviors
       const registration = this.registeredBehaviors.get(blockId);
       if (registration) {
         // Remove data map file
         try {
-          await api.internal.fs.deleteFile(registration.dataMapPath);
+          if (api.internal?.fs?.deleteFile) {
+            await api.internal.fs.deleteFile(registration.dataMapPath);
+          }
         } catch (error) {
           this.logger.warn(`Failed to delete data map file: ${error}`);
         }
-        
+
         this.registeredBehaviors.delete(blockId);
       }
 
@@ -633,7 +642,7 @@ export function getDataMapBehaviorSystem(): DataMapBehaviorSystem {
  * Convenience function to register behavior
  */
 export async function registerBlockBehavior(
-  blockId: string, 
+  blockId: string,
   behavior: BehaviorDefinition
 ): Promise<{ success: boolean; error?: string }> {
   const system = getDataMapBehaviorSystem();

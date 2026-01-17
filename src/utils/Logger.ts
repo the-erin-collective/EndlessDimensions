@@ -5,12 +5,12 @@ export class Logger {
         this.prefix = prefix;
     }
 
-    public info(message: string): void {
-        this.log('INFO', message);
+    public info(message: string, data?: any): void {
+        this.log('INFO', message + (data ? ' ' + JSON.stringify(data) : ''));
     }
 
-    public warn(message: string): void {
-        this.log('WARN', message);
+    public warn(message: string, data?: any): void {
+        this.log('WARN', message + (data ? ' ' + JSON.stringify(data) : ''));
     }
 
     public error(message: string, error?: any): void {
@@ -20,13 +20,13 @@ export class Logger {
         }
     }
 
-    public debug(message: string): void {
-        this.log('DEBUG', message);
+    public debug(message: string, data?: any): void {
+        this.log('DEBUG', message + (data ? ' ' + JSON.stringify(data) : ''));
     }
 
     private log(level: string, message: string): void {
         const formattedMessage = `[${this.prefix}] [${level}] ${message}`;
-        
+
         // Try different logging methods based on environment
         try {
             // Method 1: Try Moud's logger (if available)

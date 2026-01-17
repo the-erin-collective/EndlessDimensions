@@ -15,14 +15,23 @@ public class PvPBridgeExtension extends Extension {
     
     @Override
     public void initialize() {
+        logger.info("[PvPBridgeExtension] ========== EXTENSION LOADING START ==========");
         logger.info("[PvPBridgeExtension] Initializing PvP bridge extension...");
         
         try {
+            // Check if static initializer has already run
+            if (endless.bridge.registry.BridgeRegistry.isRegistered("PvP")) {
+                logger.info("[PvPBridgeExtension] PvP already registered in BridgeRegistry (static initializer ran)");
+            } else {
+                logger.info("[PvPBridgeExtension] PvP not yet registered in BridgeRegistry");
+            }
+            
             // Initialize the bridge plugin
             bridgePlugin = new PvPBridgePlugin();
             bridgePlugin.initialize(null);
             
             logger.info("[PvPBridgeExtension] PvP bridge extension initialized successfully");
+            logger.info("[PvPBridgeExtension] ========== EXTENSION LOADING COMPLETE ==========");
         } catch (Exception e) {
             logger.error("[PvPBridgeExtension] Failed to initialize PvP bridge extension", e);
             throw new RuntimeException("Failed to initialize PvP bridge extension", e);

@@ -1,4 +1,3 @@
-/// <reference types="@epi-studio/moud-sdk" />
 import { Logger } from '../utils/Logger';
 
 // Type definitions for testing
@@ -8,7 +7,7 @@ interface TestScenario {
   description: string;
   category: 'dimension_creation' | 'portal_interaction' | 'book_analysis' | 'audio_effects' | 'particle_effects' | 'user_feedback' | 'performance';
   steps: TestStep[];
-  expectedResults: TestResult[];
+  expectedResults: Partial<TestResult>[];
   timeout: number;
 }
 
@@ -464,7 +463,7 @@ export class IntegrationTesting {
       const reports: TestReport[] = [];
 
       for (const [suiteId, suite] of this.testSuites.entries()) {
-        const report = await this.runTestSuite(suiteId, suite);
+        const report = await this.runTestSuite(suiteId);
         reports.push(report);
       }
 
@@ -559,8 +558,8 @@ export class IntegrationTesting {
 
       return {
         success: allPassed,
-        message: allPassed ? 
-          `Scenario "${scenario.name}" completed successfully` : 
+        message: allPassed ?
+          `Scenario "${scenario.name}" completed successfully` :
           `Scenario "${scenario.name}" failed`,
         details: {
           scenario: scenario.name,
@@ -594,7 +593,7 @@ export class IntegrationTesting {
         try {
           const result = await Promise.race([
             step.action(),
-            new Promise<TestResult>((_, reject) => 
+            new Promise<TestResult>((_, reject) =>
               setTimeout(() => reject(new Error('Timeout')), step.timeout)
             )
           ]);
@@ -722,14 +721,14 @@ export class IntegrationTesting {
     try {
       // Check if dimension was created in state
       const dimensionId = `test_${generatorType}_dimension`;
-      
+
       // Simulate state check
       const dimensionExists = true; // Assume success for test
-      
+
       return {
         success: dimensionExists,
-        message: dimensionExists ? 
-          `Dimension ${dimensionId} verified` : 
+        message: dimensionExists ?
+          `Dimension ${dimensionId} verified` :
           `Dimension ${dimensionId} not found`,
         details: { dimensionId, generatorType },
         duration: 300,
@@ -852,8 +851,8 @@ export class IntegrationTesting {
 
       return {
         success: collisionDetected,
-        message: collisionDetected ? 
-          'Collision detection verified' : 
+        message: collisionDetected ?
+          'Collision detection verified' :
           'Collision detection failed',
         details: { collisionDetected },
         duration: 100,
@@ -1033,14 +1032,14 @@ export class IntegrationTesting {
   private async measureStateSyncPerformance(): Promise<TestResult> {
     try {
       const startTime = performance.now();
-      
+
       // Simulate state sync operations
       for (let i = 0; i < 1000; i++) {
         // Simulate state subscription and processing
         const testState = { test: i, timestamp: Date.now() };
         JSON.stringify(testState); // Simulate serialization
       }
-      
+
       const endTime = performance.now();
       const syncTime = endTime - startTime;
 
@@ -1071,7 +1070,7 @@ export class IntegrationTesting {
   private async measurePacketProcessingPerformance(): Promise<TestResult> {
     try {
       const startTime = performance.now();
-      
+
       // Simulate packet processing
       for (let i = 0; i < 500; i++) {
         // Simulate packet creation and processing
@@ -1082,7 +1081,7 @@ export class IntegrationTesting {
         };
         JSON.stringify(testPacket); // Simulate processing
       }
-      
+
       const endTime = performance.now();
       const processingTime = endTime - startTime;
 
@@ -1156,7 +1155,7 @@ export class IntegrationTesting {
   public async saveTestReport(reports: TestReport[]): Promise<{ success: boolean; error?: string }> {
     try {
       const reportContent = this.generateTestReport(reports);
-      
+
       if (api.internal && api.internal.fs) {
         await api.internal.fs.writeFile('test_report.md', reportContent);
         return { success: true };

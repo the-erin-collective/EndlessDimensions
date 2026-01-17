@@ -1,4 +1,3 @@
-/// <reference types="@epi-studio/moud-sdk" />
 
 import { BridgePluginManager } from './BridgePluginManager';
 

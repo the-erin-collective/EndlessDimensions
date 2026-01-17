@@ -9,6 +9,7 @@ version = '1.0.0-BETA'
 description = 'Polar Bridge Plugin for Moud - TypeScript-friendly Polar world format integration'
 
 repositories {
+    mavenLocal()
     mavenCentral()
     maven { url 'https://repo.hollowcube.dev/releases' }
     maven { url 'https://jitpack.io' }
@@ -20,14 +21,14 @@ repositories {
 }
 
 dependencies {
-    // Minestom CE Extensions - for proper extension loading
-    implementation 'dev.hollowcube:minestom-ce-extensions:1.2.0'
+    // Minestom CE Extensions - use local published version
+    implementation 'dev.hollowcube:minestom-ce-extensions:1.2.0-LOCAL-PATCH'
     
     // Kotlin standard library for DependencyGetter
     implementation 'org.jetbrains.kotlin:kotlin-stdlib:1.9.10'
     
     // Polar dependency - try a version compatible with Java 21
-    implementation 'dev.hollowcube:polar:1.14.6'
+    implementation 'dev.hollowcube:polar:1.15.0'
     
     // Force newer ASM version for Java 21 compatibility
     implementation 'org.ow2.asm:asm:9.7'
@@ -50,13 +51,13 @@ dependencies {
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
+        languageVersion = JavaLanguageVersion.of(25)
     }
 }
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
-    options.release = 21
+    options.release = 25
 }
 
 test {

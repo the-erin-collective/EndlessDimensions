@@ -10,7 +10,9 @@ const bridgePlugins = [
     { name: 'polar-bridge', path: 'src/bridges/polar-bridge-plugin' },
     { name: 'terra-bridge', path: 'src/bridges/terra-bridge-plugin' },
     { name: 'trove-bridge', path: 'src/bridges/trove-bridge-plugin' },
-    { name: 'pvp-bridge', path: 'src/bridges/pvp-bridge-plugin' }
+    { name: 'pvp-bridge', path: 'src/bridges/pvp-bridge-plugin' },
+    { name: 'endless-bridge', path: 'src/bridges/endless-bridge-plugin' },
+    { name: 'base-bridge', path: 'src/bridges/base-bridge-plugin' }
 ];
 
 const extensionsDir = path.join(__dirname, 'extensions');
@@ -83,3 +85,28 @@ if (fs.existsSync(extensionsDir)) {
 } else {
     console.log('  (empty)');
 }
+
+// Sync base Terra packs for vanilla overworld/nether/end
+const terraPacksSrc = path.join(__dirname, 'docs', 'terrapacks');
+const terraPacksDest = path.join(extensionsDir, 'terra-bridge-plugin', 'packs');
+
+const packMappings = [
+    { src: path.join(terraPacksSrc, 'TerraOverworldConfig'), dest: path.join(terraPacksDest, 'terra_overworld') },
+    { src: path.join(terraPacksSrc, 'Tartarus'), dest: path.join(terraPacksDest, 'terra_nether') },
+    { src: path.join(terraPacksSrc, 'ReimagEND'), dest: path.join(terraPacksDest, 'terra_end') }
+];
+
+const copyPack = (srcDir, destDir) => {
+    if (!fs.existsSync(srcDir)) {
+        console.warn(`Missing Terra pack source: ${srcDir}`);
+        return;
+    }
+    fs.mkdirSync(destDir, { recursive: true });
+    fs.cpSync(srcDir, destDir, {
+        recursive: true,
+        filter: (src) => !src.includes(`${path.sep}.git${path.sep}`) && !src.endsWith(`${path.sep}.git`)
+    });
+    console.log(`Synced Terra pack: ${srcDir} -> ${destDir}`);
+};
+
+packMappings.forEach(({ src, dest }) => copyPack(src, dest));

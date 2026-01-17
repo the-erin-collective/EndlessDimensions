@@ -1,7 +1,8 @@
-/// <reference types="@epi-studio/moud-sdk" />
+/*
+ * Migration note: block/fluid selection and blacklist rules used to build dimension palettes.
+ * Java plugin can reuse these rules when generating Terra palettes per docs/terra_custom_dimension_tech_spec.md.
+ */
 import { Logger } from '../utils/Logger';
-import * as path from 'path';
-import * as https from 'https';
 
 export class BlockRegistry {
     private api: MoudAPI;
@@ -205,10 +206,10 @@ export class BlockRegistry {
             }, 3000);
 
             try {
-                https.get(url, (response) => {
-                    let data = '';
-                    response.on('data', (chunk) => { data += chunk; });
-                    response.on('end', () => {
+                // Use fetch API which should be available in Moud environment
+                fetch(url)
+                    .then(response => response.text())
+                    .then(data => {
                         clearTimeout(timeout);
                         try {
                             const items = JSON.parse(data);
@@ -221,12 +222,12 @@ export class BlockRegistry {
                             this.logger.error('Failed to parse API response, using fallbacks.', error);
                             resolve(fallbacks);
                         }
+                    })
+                    .catch(error => {
+                        clearTimeout(timeout);
+                        this.logger.error('Failed to fetch block list from API, using fallbacks.', error);
+                        resolve(fallbacks);
                     });
-                }).on('error', (error) => {
-                    clearTimeout(timeout);
-                    this.logger.warn(`API fetch failed: ${error.message}. Using fallback block list.`);
-                    resolve(fallbacks);
-                });
             } catch (err) {
                 clearTimeout(timeout);
                 this.logger.warn('Environment does not support external HTTP requests. Using fallbacks.');

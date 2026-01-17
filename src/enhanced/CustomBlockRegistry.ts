@@ -1,6 +1,5 @@
-/// <reference types="@epi-studio/moud-sdk" />
 import { Logger } from '../utils/Logger';
-import { DimensionConfig } from '../core/DimensionGenerator';
+import { DimensionConfig } from '../types/DimensionConfig';
 
 // Type definitions for custom block registry
 interface CustomBlockConfig {

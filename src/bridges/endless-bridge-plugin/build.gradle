@@ -1,0 +1,97 @@
+buildscript {
+    repositories {
+        mavenLocal()
+        mavenCentral()
+    }
+    dependencies {
+        // This forces Gradle build environment to use a compatible ASM version
+        classpath 'org.ow2.asm:asm:9.7'
+        classpath 'org.ow2.asm:asm-commons:9.7'
+    }
+}
+
+plugins {
+    id 'java'
+    id 'java-library'
+    id 'com.gradleup.shadow' version '9.3.1'
+}
+
+group = 'com.moud.endlessdimensions'
+version = '1.0.0-BETA'
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+    maven { url 'https://repo.codemc.io/repository/maven-public/' }
+    maven { url 'https://mvn.everbuild.org/public' }
+    maven { url 'https://repo.hollowcube.dev/releases' }
+    maven { url 'https://jitpack.io' }
+}
+
+dependencies {
+    // Minestom CE Extensions - for proper extension loading
+    implementation('dev.hollowcube:minestom-ce-extensions:1.2.0') {
+        exclude group: 'com.github.Minestom', module: 'DependencyGetter'
+    }
+    
+    // Kotlin standard library for DependencyGetter
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib:1.9.10'
+    
+    // Core Terra dependency
+    implementation('com.dfsek.terra:minestom:6.6.0-BETA+810d10ac0') {
+        exclude group: 'net.minestom', module: 'minestom'
+    }
+
+    // Minestom (provided by server runtime)
+    compileOnly 'net.minestom:minestom:2026.01.08-1.21.11'
+
+    // JSON serialization
+    implementation 'com.google.code.gson:gson:2.11.0'
+    
+    // Force newer ASM version for Java 21 compatibility
+    implementation 'org.ow2.asm:asm:9.7'
+    implementation 'org.ow2.asm:asm-commons:9.7'
+    
+    // GraalVM Polyglot (provided by Moud if available)
+    compileOnly 'org.graalvm.sdk:graal-sdk:24.0.0'
+    
+    // Testing dependencies
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.0'
+    testImplementation 'org.mockito:mockito-core:5.5.0'
+    testImplementation 'org.mockito:mockito-junit-jupiter:5.5.0'
+    testImplementation 'org.graalvm.sdk:graal-sdk:24.0.0'
+}
+
+shadowJar {
+    archiveBaseName.set('moud-endless-bridge')
+    archiveClassifier.set('')
+    mergeServiceFiles()
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
+}
+
+test {
+    useJUnitPlatform()
+    
+    // Configure JVM arguments for tests
+    jvmArgs = [
+        '--add-opens', 'java.base/java.lang=ALL-UNNAMED',
+        '--add-opens', 'java.base/java.util=ALL-UNNAMED',
+        '-Dgraalvm.PolyglotEngine.WarnInterpreterOnly=false'
+    ]
+    
+    // Set system properties for testing
+    systemProperty 'java.awt.headless', 'true'
+    
+    // Configure test logging
+    testLogging {
+        events "passed", "skipped", "failed"
+        exceptionFormat "full"
+    }
+}

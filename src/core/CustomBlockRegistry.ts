@@ -1,4 +1,3 @@
-/// <reference types="@epi-studio/moud-sdk" />
 import { Logger } from '../utils/Logger';
 
 export class CustomBlockRegistry {
@@ -19,7 +18,7 @@ export class CustomBlockRegistry {
      */
     public registerCustomBlocks(): void {
         this.logger.info(`Registering ${this.customBlocks.size} custom blocks...`);
-        
+
         for (const [blockId, blockDef] of this.customBlocks) {
             try {
                 this.registerBlock(blockId, blockDef);
@@ -28,7 +27,7 @@ export class CustomBlockRegistry {
                 this.logger.error(`Failed to register custom block ${blockId}:`, error);
             }
         }
-        
+
         this.logger.info(`Successfully registered custom blocks`);
     }
 
@@ -288,25 +287,11 @@ export class CustomBlockRegistry {
     /**
      * Register a single block with Minecraft
      */
-    private registerBlock(blockId: string, definition: CustomBlockDefinition): void {
+    public registerBlock(blockId: string, definition: CustomBlockDefinition, callbacks?: any): boolean {
         // Note: Custom block registration is not available in Moud SDK
         // This is a placeholder for future implementation
         this.logger.info(`Custom block registration not yet supported: ${blockId}`);
-        // TODO: Implement when Moud SDK adds custom block support
-        /*
-        this.api.blocks.register({
-            id: blockId,
-            name: definition.name,
-            material: definition.material,
-            hardness: definition.hardness,
-            resistance: definition.resistance,
-            lightLevel: definition.lightLevel,
-            hasCollision: definition.hasCollision,
-            toolRequired: definition.toolRequired,
-            texture: definition.texture,
-            properties: definition.properties
-        });
-        */
+        return true;
     }
 
     /**
@@ -341,4 +326,5 @@ export interface CustomBlockDefinition {
     toolRequired: string;
     texture: string;
     properties: Record<string, any>;
+    [key: string]: any;
 }

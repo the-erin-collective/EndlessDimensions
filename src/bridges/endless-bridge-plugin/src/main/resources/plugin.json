@@ -1,0 +1,30 @@
+{
+  "id": "endless-bridge",
+  "name": "Endless Bridge Plugin",
+  "version": "1.0.0-BETA",
+  "description": "Endless Dimensions bridge plugin for Terra-driven custom dimensions",
+  "author": "Moud Team",
+  "mainClass": "com.moud.endlessdimensions.EndlessBridgePlugin",
+  "depends": [
+    "plugin-api"
+  ],
+  "provides": [
+    "endless-dimensions"
+  ],
+  "permissions": [
+    "endless.dimension.create",
+    "endless.dimension.manage"
+  ],
+  "graalvm": {
+    "hostAccess": "explicit",
+    "allowClassLoading": [
+      "com.moud.endlessdimensions",
+      "net.minestom",
+      "com.dfsek.terra"
+    ],
+    "resourceLimits": {
+      "statementCount": 100000,
+      "memoryMB": 512
+    }
+  }
+}

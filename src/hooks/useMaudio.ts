@@ -1,4 +1,3 @@
-/// <reference types="@epi-studio/moud-sdk" />
 import { Logger } from '../utils/Logger';
 import { getCentralizedStateManager } from '../core/CentralizedStateManager';
 
@@ -16,6 +15,7 @@ interface AudioConfig {
   loop: boolean;
   fadeDuration?: number;
   distance?: number;
+  position?: Vec3;
   category?: 'master' | 'music' | 'record' | 'weather' | 'block' | 'hostile' | 'neutral' | 'player' | 'ambient' | 'voice';
 }
 
@@ -136,7 +136,7 @@ export class MaudioIntegration {
           dopplerEffect: true,
           reverb: true
         });
-        
+
         this.logger.info('Maudio engine initialized successfully');
       } catch (importError) {
         this.logger.warn('Maudio library not found, using fallback audio system');
@@ -190,21 +190,21 @@ export class MaudioIntegration {
     const volume = config.volume || 1.0;
     const pitch = config.pitch || 1.0;
     const category = config.category || 'master';
-    
+
     let command = `/playsound ${soundId} ${category}`;
-    
+
     if (config.position) {
       command += ` ${position.x} ${position.y} ${position.z}`;
     } else {
       command += ` @a`;
     }
-    
+
     command += ` ${volume} ${pitch}`;
-    
-    if (config.minDistance) {
-      command += ` ${config.minDistance}`;
+
+    if (config.distance) {
+      command += ` ${config.distance}`;
     }
-    
+
     return command;
   }
 
@@ -656,7 +656,7 @@ export class MaudioIntegration {
   private generateAmbientConfig(config: any): AudioConfig {
     try {
       const generatorType = config.generator?.type || 'noise';
-      
+
       // Select ambient sound based on generator type
       const ambientSounds = {
         'noise': 'minecraft:ambient.cave',
@@ -692,11 +692,11 @@ export class MaudioIntegration {
   private generateMusicConfig(config: any): AudioConfig {
     try {
       const bookData = config.bookData;
-      
+
       // Select music based on book content
       if (bookData) {
         const title = bookData.title?.toLowerCase() || '';
-        
+
         if (title.includes('chaos') || title.includes('disorder')) {
           return {
             soundId: 'minecraft:misc.nether_travel',
@@ -1006,7 +1006,7 @@ export class MaudioIntegration {
   public playSound(soundId: string, config: AudioConfig): string {
     try {
       const actualSoundId = `${soundId}_${Date.now()}_${Math.random()}`;
-      
+
       const activeSound: ActiveSound = {
         id: actualSoundId,
         soundId,
@@ -1102,7 +1102,7 @@ export class MaudioIntegration {
     try {
       this.statistics.activeSounds = this.activeSounds.size;
       this.statistics.activeRegions = this.audioRegions.size;
-      
+
       // Calculate average play time
       const now = Date.now();
       let totalPlayTime = 0;

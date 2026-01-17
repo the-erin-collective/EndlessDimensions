@@ -1,4 +1,3 @@
-/// <reference types="@epi-studio/moud-sdk" />
 
 /**
  * Network packet constants for Minecraft 1.21+ Data Component environment
